@@ -5,8 +5,10 @@ declare(strict_types=1);
 /*
  * Synthetic Server-Sent Events server for live transport tests. Prints its port on the first line of stdout, serves
  * one connection and exits. The first argument picks the script:
- * - delayed: HTTP 200 `text/event-stream`, the connect reply at once, one event after 3 s, then the connection stays
- *   idle until the client leaves (at most 12 s);
+ * - delayed: HTTP 200 `text/event-stream`, the connect reply at once, then it waits for the test to release it (a line
+ *   on stdin, `FixtureServer::release()`), one event 3 s after the release, then the connection stays idle until the
+ *   client leaves (at most 12 s). Counting from the release, not from the connect reply, keeps the timing tests stable
+ *   when the runner stalls between the connect and the test's read;
  * - mid-event: the connect reply, then half an event, then the connection is closed;
  * - burst: the connect reply and three events in one write, then the connection is closed;
  * - chunked: like delayed, but `Transfer-Encoding: chunked` (the connect reply at once, one event after 2.5 s), the body
@@ -64,6 +66,11 @@ if ($mode === 'mid-event') {
 if ($mode === 'chunked') {
     usleep(2_500_000);
 } else {
+    $stdin = [STDIN];
+    $none = null;
+    if (stream_select($stdin, $none, $none, 12) !== 1 || fgets(STDIN) === false) {
+        exit(1);
+    }
     sleep(3);
 }
 $send($event);
