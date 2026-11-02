@@ -1,0 +1,21 @@
+# Hand-written override (SDK_SPEC 1.2): AchievementBooleanParam.value (Boolean!) and AchievementStringParam.value (String!)
+# share a response name inside the params union, which GraphQL rejects; the fields are aliased instead of using fragments.
+mutation StoreEdit($storeInput: PersonStoreInput!) {
+  store_edit(storeInput: $storeInput) {
+    ...PersonStoreFields
+    achievements {
+      ...PersonAchievementFields
+      params {
+        __typename
+        ... on AchievementBooleanParam {
+          name
+          booleanValue: value
+        }
+        ... on AchievementStringParam {
+          name
+          stringValue: value
+        }
+      }
+    }
+  }
+}

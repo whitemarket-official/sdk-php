@@ -1,0 +1,7 @@
+{
+  "type": "market_product_edited",
+  "content": {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "price": "2.10"
+  }
+}

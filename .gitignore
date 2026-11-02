@@ -1,0 +1,28 @@
+# IDE
+.idea/
+
+# Local agent brief with local paths, never published
+docs/KICKOFF_PROMPT.md
+
+# PHP / Composer
+/vendor/
+/tools/*/vendor/
+/tools/codegen/node_modules/
+composer.phar
+.phpunit.cache/
+.phpunit.result.cache
+.php-cs-fixer.cache
+/build/
+
+# Local runtime output (qc logs, live smoke reports, agent state)
+/var/
+
+# Local env and editor files
+.env
+.env.*
+!.env.example
+.vscode/
+.DS_Store
+
+# Agent session handoffs
+/HANDOFF_*.md

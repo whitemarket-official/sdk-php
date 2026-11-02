@@ -1,0 +1,3 @@
+mutation ProductRemove($ids: [Uuid!]!) {
+  product_remove(ids: $ids)
+}

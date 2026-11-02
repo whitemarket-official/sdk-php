@@ -1,0 +1,14 @@
+{
+  "name": "whitemarket-sdk-codegen",
+  "private": true,
+  "description": "Schema fetch and operation generator shared byte-for-byte by every WhiteMarket SDK (SDK_SPEC 1.2).",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@graphql-inspector/core": "8.0.1",
+    "graphql": "17.0.2"
+  }
+}

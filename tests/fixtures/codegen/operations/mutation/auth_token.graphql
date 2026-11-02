@@ -1,0 +1,7 @@
+mutation AuthToken($secret: String!) {
+  auth_token(secret: $secret) {
+    accessToken
+    refreshSecret
+    expiresIn
+  }
+}

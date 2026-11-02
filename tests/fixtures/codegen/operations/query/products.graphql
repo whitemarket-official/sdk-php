@@ -1,0 +1,51 @@
+query Products($search: SearchInput = null, $first: Int = 20) {
+  products(search: $search, first: $first) {
+    edges {
+      cursor
+      node {
+        id
+        status
+        createdAt
+        price {
+          ...MoneyFields
+        }
+        discount {
+          ...MoneyFields
+          value
+        }
+        item {
+          __typename
+          id
+          ... on Skin {
+            wear
+            fade
+          }
+          ... on Sticker {
+            slot
+          }
+        }
+        params {
+          __typename
+          ... on Flag {
+            enabled
+          }
+          ... on Note {
+            note: text
+          }
+        }
+        hidden {
+          __typename
+        }
+        tags
+        list {
+          ...MoneyFields
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "name": "whitemarket/sdk",
+  "description": "Official PHP SDK for the WhiteMarket partner API (CS2 skins marketplace): GraphQL, export files, live updates.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "whitemarket",
+    "cs2",
+    "skins",
+    "marketplace",
+    "graphql",
+    "sdk"
+  ],
+  "homepage": "https://github.com/whitemarket-official/sdk-php",
+  "support": {
+    "issues": "https://github.com/whitemarket-official/sdk-php/issues",
+    "source": "https://github.com/whitemarket-official/sdk-php",
+    "security": "https://github.com/whitemarket-official/sdk-php/security/advisories/new"
+  },
+  "require": {
+    "php": "^8.2",
+    "ext-curl": "*",
+    "ext-zlib": "*",
+    "guzzlehttp/guzzle": "^7.9 || ^8.0",
+    "guzzlehttp/psr7": "^2.7",
+    "halaxa/json-machine": "^1.2.6",
+    "phrity/net-stream": "^2.4",
+    "phrity/websocket": "^4.1",
+    "psr/http-client": "^1.0",
+    "psr/http-factory": "^1.1",
+    "psr/http-message": "^1.1 || ^2.0",
+    "psr/log": "^2.0 || ^3.0",
+    "psr/simple-cache": "^2.0 || ^3.0"
+  },
+  "suggest": {
+    "ext-simdjson": "Faster JSON parsing of ExportClient::streamProducts() (JsonStreamDecoder::Simdjson, picked by Auto)",
+    "ext-yajl_stream": "Fastest JSON parsing of ExportClient::streamProducts() (JsonStreamDecoder::YajlStream, picked first by Auto)"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.95",
+    "nikic/php-parser": "^5.9",
+    "phpstan/phpstan": "^2.3",
+    "phpstan/phpstan-deprecation-rules": "^2.0",
+    "phpstan/phpstan-phpunit": "^2.1",
+    "phpstan/phpstan-strict-rules": "^2.1",
+    "phpunit/phpunit": "^11.5",
+    "rector/rector": "^2.8",
+    "shipmonk/composer-dependency-analyser": "^1.8",
+    "shipmonk/phpstan-rules": "^4.4",
+    "webonyx/graphql-php": "^15.39"
+  },
+  "autoload": {
+    "psr-4": {
+      "WhiteMarket\\Sdk\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "WhiteMarket\\Sdk\\Tests\\Unit\\": "tests/unit/",
+      "WhiteMarket\\Sdk\\Tests\\Integration\\": "tests/integration/",
+      "WhiteMarket\\Sdk\\Tests\\Codegen\\": "tests/codegen/",
+      "WhiteMarket\\Sdk\\Tests\\Support\\": "tests/Support/",
+      "WhiteMarket\\Sdk\\Tests\\PHPStan\\": "tests/phpstan/",
+      "WhiteMarket\\Sdk\\Tools\\Codegen\\": "tools/codegen-php/src/",
+      "WhiteMarket\\Sdk\\Tools\\PHPStan\\": "tools/phpstan/src/",
+      "WhiteMarket\\Sdk\\Tools\\LiveSmoke\\": "tools/live-smoke/src/",
+      "WhiteMarket\\Sdk\\Tests\\LiveSmoke\\": "tests/livesmoke/",
+      "WhiteMarket\\Sdk\\Tests\\Fixtures\\Codegen\\Golden\\": "tests/fixtures/codegen/golden/"
+    },
+    "classmap": [
+      "tests/fixtures/phpstan/"
+    ],
+    "files": [
+      "examples/Support/env.php",
+      "examples/Support/failure.php"
+    ]
+  },
+  "config": {
+    "platform": {
+      "php": "8.2.0"
+    },
+    "sort-packages": true,
+    "optimize-autoloader": true,
+    "allow-plugins": {}
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "scripts": {
+    "check": "make check",
+    "fmt": "php-cs-fixer fix",
+    "fmt-check": "php-cs-fixer fix --dry-run --diff",
+    "stan": "phpstan analyse --no-progress",
+    "rector-check": "rector process --dry-run --no-progress-bar",
+    "test": "phpunit",
+    "deps": "composer-dependency-analyser",
+    "audit-deps": "@composer audit"
+  }
+}

@@ -1,0 +1,81 @@
+# Hand-written override (SDK_SPEC 1.2): the server fails `updatedAt` of a deal's product item (`MarketProductHistory.params`)
+# with "Internal error occurred" and `params.order { id }` with HTTP 500, and rolls a mutation back when it does:
+# `market_buy` created no deal [observed 2026-11-02, twice]. Dropped there: `updatedAt` (the CSGOInventoryItemFields
+# leaves are inlined without it) and `order`. Pinned by tests/unit/Generated/ProductHistoryParamsSelectionTest.php.
+mutation DealCancelSendingOffer($comment: String!, $customId: String, $id: Uuid, $reason: MarketDealExternalCancelReason!) {
+  deal_cancel_sending_offer(
+    comment: $comment
+    customId: $customId
+    id: $id
+    reason: $reason
+  ) {
+    ...MarketDealHistoryFields
+    buyer {
+      ...PersonPublicFields
+    }
+    price {
+      ...MoneyFields
+    }
+    priceNet {
+      ...MoneyFields
+    }
+    product {
+      ...MarketProductHistoryFields
+      description {
+        __typename
+        ... on CSGOSteamItem {
+          ...CSGOSteamItemFields
+        }
+      }
+      params {
+        __typename
+        ... on CSGOInventoryItem {
+          amount
+          appId
+          assetId
+          canInstantSell
+          classId
+          contextId
+          exteriorEnum
+          fade
+          fadeRank
+          float
+          id
+          instanceId
+          isAdditionalDataMissed
+          isStickersDataMissed
+          link
+          nameHash
+          paintIndex
+          paintSeed
+          phase
+          phaseEnum
+          purchasePriceIndicator
+          sellerSteamId
+          similarQty
+          deal {
+            id
+          }
+          product {
+            id
+          }
+        }
+      }
+      price {
+        ...MoneyFields
+      }
+      store {
+        ...PersonStoreFields
+      }
+    }
+    reversePenaltyValue {
+      ...MoneyFields
+    }
+    reverseRefundValue {
+      ...MoneyFields
+    }
+    seller {
+      ...PersonPublicFields
+    }
+  }
+}

@@ -1,0 +1,15 @@
+# Default owners
+*                         @whitemarket-official/sdk-maintainers
+
+# Agent configuration is executable instructions for every future agent session:
+# changes are reviewed by a human separately (CLAUDE.md, "Agent configuration is a security zone").
+/CLAUDE.md                @whitemarket-official/sdk-maintainers
+/.claude/hooks/           @whitemarket-official/sdk-maintainers
+/.claude/skills/          @whitemarket-official/sdk-maintainers
+/.claude/agents/          @whitemarket-official/sdk-maintainers
+/.claude/commands/        @whitemarket-official/sdk-maintainers
+/.claude/settings.json    @whitemarket-official/sdk-maintainers
+/.mcp.json                @whitemarket-official/sdk-maintainers
+
+# CI and release pipelines
+/.github/                 @whitemarket-official/sdk-maintainers

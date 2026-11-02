@@ -1,0 +1,61 @@
+name: Live smoke
+
+# Read-only calls against the real partner API (SDK_SPEC 6.4): every generated query, export meta + 100 rows,
+# one live products event over WebSocket and SSE. Never runs a mutation other than auth_token
+# (tools/live-smoke/src/ReadOnlyExecutor.php). Needs the repository secret WM_PARTNER_TOKEN of a dedicated test
+# partner account; without it the job only prints a notice.
+
+on:
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Live smoke (read-only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      # A boolean only: the secret value itself is exposed to the smoke step alone.
+      HAS_TOKEN: ${{ secrets.WM_PARTNER_TOKEN != '' }}
+    steps:
+      - name: Token check
+        if: env.HAS_TOKEN != 'true'
+        run: echo "::notice::Secret WM_PARTNER_TOKEN is not set; the live smoke is skipped."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.HAS_TOKEN == 'true'
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        if: env.HAS_TOKEN == 'true'
+        with:
+          php-version: '8.5'
+          coverage: none
+          tools: composer:2.11.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: env.HAS_TOKEN == 'true'
+        with:
+          path: ~/.cache/composer
+          key: composer-live-smoke-${{ hashFiles('composer.lock') }}
+      - if: env.HAS_TOKEN == 'true'
+        run: composer install --no-interaction --no-progress
+      - name: Smoke
+        if: env.HAS_TOKEN == 'true'
+        env:
+          WHITEMARKET_PARTNER_TOKEN: ${{ secrets.WM_PARTNER_TOKEN }}
+          COMPOSER_BIN: composer
+        run: make live-smoke
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && env.HAS_TOKEN == 'true'
+        with:
+          name: live-smoke-report
+          path: var/live-smoke/report.md
+          if-no-files-found: warn
+          retention-days: 30

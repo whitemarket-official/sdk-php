@@ -1,0 +1,98 @@
+name: Release
+
+# Pushing a version tag runs make check, builds a source archive of the tagged tree, attests its build provenance and
+# publishes a GitHub Release. Packagist picks the tag up by itself; no Packagist token is used here.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  COMPOSER_BIN: composer
+  PHP_COV: php
+
+jobs:
+  check:
+    name: make check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          coverage: pcov
+          tools: composer:2.11.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/composer
+          key: composer-release-${{ hashFiles('composer.lock', 'tools/infection/composer.lock') }}
+      - run: make install
+      - run: make check VERBOSE=1
+
+  publish:
+    name: Archive, attest, release
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # contents: write creates the release; id-token, attestations and artifact-metadata are the permissions the
+    # actions/attest README lists for the attestation step.
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      # Full history so the job can verify that the tag is reachable from main.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Verify the tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if ! printf '%s' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::tag '$TAG' is not a SemVer version tag"
+            exit 1
+          fi
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::tag '$TAG' is not on main"
+            exit 1
+          fi
+
+      # git archive honours export-ignore from .gitattributes, so the archive matches the Composer dist.
+      - name: Build the source archive
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/dist"
+          git archive --format=tar.gz --prefix="sdk-php-${TAG}/" -o "$RUNNER_TEMP/dist/sdk-php-${TAG}.tar.gz" "$GITHUB_SHA"
+          (cd "$RUNNER_TEMP/dist" && sha256sum "sdk-php-${TAG}.tar.gz" > "sdk-php-${TAG}.tar.gz.sha256")
+
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ runner.temp }}/dist/sdk-php-${{ github.ref_name }}.tar.gz
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          flags=()
+          case "$TAG" in *-*) flags+=(--prerelease) ;; esac
+          gh release create "$TAG" --verify-tag --generate-notes --title "$TAG" "${flags[@]}" \
+            "$RUNNER_TEMP/dist/sdk-php-${TAG}.tar.gz" "$RUNNER_TEMP/dist/sdk-php-${TAG}.tar.gz.sha256"

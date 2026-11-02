@@ -1,0 +1,62 @@
+# Strictest practical PHPStan setup: level max + bleeding edge + strict-rules + deprecation-rules
+# + shipmonk/phpstan-rules + every opt-in strictness flag of the config reference
+# (https://phpstan.org/config-reference). Suppressions need a reason and an issue reference (CLAUDE.md rule 15).
+includes:
+    - phar://phpstan.phar/conf/bleedingEdge.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+    - vendor/shipmonk/phpstan-rules/rules.neon
+
+rules:
+    - WhiteMarket\Sdk\Tools\PHPStan\SensitiveParameterInheritanceRule
+    - WhiteMarket\Sdk\Tools\PHPStan\SensitiveCallbackRule
+    - WhiteMarket\Sdk\Tools\PHPStan\SensitiveTypedParameterRule
+
+parameters:
+    level: max
+    phpVersion:
+        min: 80200
+        max: 80599
+    paths:
+        - src
+        - tests
+        - examples
+        - tools/codegen-php
+        - tools/phpstan
+        - tools/live-smoke
+    excludePaths:
+        # Deliberate violations analysed by the rule tests in tests/phpstan.
+        - tests/fixtures/phpstan
+    # Optional extensions of the products stream (ADR 0006), not installed on every PHP.
+    scanFiles:
+        - tools/phpstan/stubs/simdjson.stub
+        - tools/phpstan/stubs/yajl_stream.stub
+    tmpDir: var/cache/phpstan
+    tipsOfTheDay: false
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: true
+    checkUninitializedProperties: true
+    checkBenevolentUnionTypes: true
+    checkMissingCallableSignature: true
+    checkTooWideReturnTypesInProtectedAndPublicMethods: true
+    reportAlwaysTrueInLastCondition: true
+    reportAnyTypeWideningInVarTag: true
+    reportPossiblyNonexistentGeneralArrayOffset: true
+    reportPossiblyNonexistentConstantArrayOffset: true
+    rememberPossiblyImpureFunctionValues: false
+    exceptions:
+        # A response that breaks the selection's shape is a server contract violation, not a condition callers handle
+        # case by case; decoders compose as closures, so it must be allowed to cross them (ADR 0002 "Output").
+        uncheckedExceptionClasses:
+            - WhiteMarket\Sdk\Errors\DecodeException
+    shipmonkRules:
+        forbidCheckedExceptionInCallable:
+            allowedCheckedExceptionCallables:
+                # The mapper runs inside the client's sendRequest(), so what it throws leaves that call and HttpTransport
+                # turns any client failure into a TransportException (ADR 0002 T2.4 notes, mutation client).
+                'GuzzleHttp\Middleware::mapRequest': 0
+                # The page fetcher runs lazily, while the caller consumes the generator, so what it throws leaves the
+                # generator's next()/current() call; iterate() documents that with @throws WhiteMarketException.
+                'WhiteMarket\Sdk\Models\Paginator::iterate': 0

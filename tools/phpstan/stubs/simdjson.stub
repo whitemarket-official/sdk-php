@@ -1,0 +1,14 @@
+<?php
+
+// The part of ext-simdjson the SDK calls (ADR 0006); the extension is optional, so PHPStan reads this stub.
+// Source: https://github.com/crazyxman/simdjson_php README (simdjson_decode signature, SimdJsonException).
+
+class SimdJsonException extends RuntimeException {}
+
+/**
+ * @return mixed
+ *
+ * @throws SimdJsonException invalid JSON, or an integer or float out of range
+ * @throws ValueError $depth out of range
+ */
+function simdjson_decode(string $json, bool $associative = false, int $depth = 512): mixed {}

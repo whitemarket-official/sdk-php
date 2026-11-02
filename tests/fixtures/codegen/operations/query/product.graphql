@@ -1,0 +1,17 @@
+query Product($id: Uuid!) {
+  product(id: $id) {
+    id
+    item {
+      __typename
+      ... on Item {
+        id
+      }
+    }
+    list {
+      value
+    }
+    value: discount {
+      value
+    }
+  }
+}

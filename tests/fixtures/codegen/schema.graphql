@@ -1,0 +1,124 @@
+# Synthetic schema for the generator golden test: one example of every construct the generator maps (ADR 0002).
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+scalar DateTime
+scalar FileUpload
+scalar Uuid
+
+"""Deal status"""
+enum Status {
+  """Waiting"""
+  NEW
+  DONE
+  OLD @deprecated(reason: "Use DONE")
+}
+
+enum Currency {
+  USD
+  EUR
+}
+
+type Money {
+  currency: Currency!
+  value: String!
+}
+
+input MoneyInput {
+  currency: Currency!
+  value: String!
+}
+
+"""Search filter"""
+input SearchInput {
+  name: String!
+  limit: Int = 10
+  statuses: [Status!]
+  slots: [String]
+  price: MoneyInput
+  from: DateTime
+  avatar: FileUpload
+  ratio: Float
+  exact: Boolean
+  legacyName: String @deprecated(reason: "Use name")
+}
+
+interface Item {
+  id: Uuid!
+}
+
+type Skin implements Item {
+  id: Uuid!
+  wear: String
+  fade: Float
+}
+
+type Sticker implements Item {
+  id: Uuid!
+  slot: Int!
+}
+
+interface Hidden {
+  id: Uuid!
+}
+
+type Flag {
+  enabled: Boolean!
+}
+
+type Note {
+  text: String!
+}
+
+union Param = Flag | Note
+
+type Product {
+  id: Uuid!
+  status: Status
+  createdAt: DateTime!
+  price: Money!
+  discount: Money
+  item: Item
+  params: [Param!]!
+  hidden: Hidden
+  tags: [String]
+  list: [Money!]
+}
+
+type ProductEdge {
+  cursor: String!
+  node: Product!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type ProductConnection {
+  edges: [ProductEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type Query {
+  products(search: SearchInput, first: Int): ProductConnection!
+  product(id: Uuid!): Product
+  balances: [Money!]!
+  hidden: Hidden!
+  items: [Item!]!
+}
+
+type Mutation {
+  product_remove(ids: [Uuid!]!): Boolean!
+  auth_token(secret: String!): AuthTokens!
+}
+
+"""A credential field (name holds a marker) and two that are not."""
+type AuthTokens {
+  accessToken: String!
+  refreshSecret: String
+  expiresIn: Int!
+}

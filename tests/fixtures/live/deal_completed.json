@@ -1,0 +1,9 @@
+{
+  "type": "market_deal_completed",
+  "content": {
+    "deal_id": "22222222-2222-4222-8222-222222222222",
+    "deal_action_type": "buy",
+    "market_product_name": "Synthetic Item | Test (Field-Tested)",
+    "deal_steam_id": "90000000000000001"
+  }
+}

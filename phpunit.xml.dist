@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         cacheDirectory="var/cache/phpunit"
+         colors="true"
+         executionOrder="random"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutCoverageMetadata="false"
+         failOnRisky="true"
+         failOnWarning="true"
+         failOnDeprecation="true"
+         failOnNotice="true"
+         failOnPhpunitDeprecation="true"
+         displayDetailsOnTestsThatTriggerDeprecations="true"
+         displayDetailsOnTestsThatTriggerErrors="true"
+         displayDetailsOnTestsThatTriggerNotices="true"
+         displayDetailsOnTestsThatTriggerWarnings="true">
+    <php>
+        <!-- The Docker images have no php.ini (CLI default 128M). Single tests peak near 90 MB by design (an 8 MB
+             WebSocket write whose trace arguments are exported, worst-case export rows), and the random order adds
+             what earlier tests left: one coverage run (seed 1793561729) died at 128M, 110M passed (2026-11-01).
+             Memory budgets of the SDK itself are asserted by their own tests (make test-memory, the live 100k test). -->
+        <ini name="memory_limit" value="256M"/>
+    </php>
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/unit</directory>
+        </testsuite>
+        <testsuite name="integration">
+            <directory>tests/integration</directory>
+        </testsuite>
+        <!-- A million-row stream per variant: slow, so outside `unit`, `make check` and coverage (make test-memory). -->
+        <testsuite name="memory">
+            <directory>tests/memory</directory>
+        </testsuite>
+        <!-- Dev tools (the generator in tools/codegen-php, PHPStan rules in tools/phpstan, the live smoke in tools/live-smoke), tested on the tools PHP
+             version only (make test-codegen). -->
+        <testsuite name="codegen">
+            <directory>tests/codegen</directory>
+            <directory>tests/phpstan</directory>
+            <directory>tests/livesmoke</directory>
+        </testsuite>
+    </testsuites>
+    <source restrictNotices="true" restrictWarnings="true" ignoreIndirectDeprecations="true">
+        <include>
+            <directory>src</directory>
+        </include>
+        <exclude>
+            <directory>src/Generated</directory>
+        </exclude>
+    </source>
+</phpunit>

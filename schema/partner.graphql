@@ -1,0 +1,3298 @@
+schema {
+  query: PartnerQuery
+  mutation: PartnerMutation
+}
+
+"""Achievement param"""
+type AchievementBooleanParam {
+  name: AchievementParamType!
+  value: Boolean!
+}
+
+enum AchievementParamType {
+  CONDITION_BUY_GLOVES
+  CONDITION_BUY_KNIFE
+  CONDITION_BUY_PISTOL
+  CONDITION_BUY_SMG_OR_RIFLE
+  CONDITION_FULFILLED_TRADE_AMOUNT
+  CONDITION_TRADE_AMOUNT
+}
+
+union AchievementParamUnion = AchievementBooleanParam | AchievementStringParam
+
+enum AchievementStatusType {
+  COMPLETED
+  IN_PROGRESS
+  MISSED
+  NOT_STARTED
+}
+
+"""Achievement param"""
+type AchievementStringParam {
+  name: AchievementParamType!
+  value: String!
+}
+
+enum AchievementType {
+  COMBO_WOMBO
+  ENTRY_FRAG
+  FEBRUARY_MARCH_24_ELITE_TRADER
+  FIRST_SELL
+  FIRST_STEPS
+  FORCE_BUY
+  FULL_BUY
+  JUNE_23_ELITE_TRADER
+  KNIFE_KILL
+  MOBILE_DEFUSE_KIT
+  PRO_TRADER
+  SAFE_HANDS
+  SEPTEMBER_23_ELITE_TRADER
+  VERIFIED_USER
+}
+
+enum AchievementTypeType {
+  ACTION
+  CHECKLIST
+  LIMIT
+  PROGRESS
+}
+
+"""Auth tokens"""
+type AuthTokens {
+  """Access token @example <JWT>"""
+  accessToken: String!
+
+  """Is new person registered @example true"""
+  isNewPerson: Boolean!
+}
+
+enum AvatarType {
+  AVATAR_1
+  AVATAR_2
+  AVATAR_3
+  AVATAR_4
+  AVATAR_5
+  AVATAR_6
+  AVATAR_7
+  AVATAR_8
+  AVATAR_9
+  AVATAR_10
+  AVATAR_11
+  AVATAR_12
+  CUSTOM
+  STEAM
+}
+
+enum BannerType {
+  BANNER_1
+  BANNER_2
+  BANNER_3
+  BANNER_4
+  BANNER_5
+  BANNER_6
+  BANNER_7
+  BANNER_8
+}
+
+enum CSGOCategory {
+  AGENT
+  CASE
+  GLOVES
+  HEAVY
+  KNIVES
+  OTHER
+  PISTOLS
+  RIFLES
+  SMGS
+  SNIPER_RIFLES
+  STICKERS
+}
+
+type CSGOCharm {
+  """Charm gradient colors from CSROI dataset"""
+  gradient: CSGOCharmGradient
+
+  """
+  Image of charm @example https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGI6zwki4Uf_a0IW2MHqH6lhKpcj_6WbwURPOi4Xwwihe-PeiJqA6dvPDD2XAmL4i47ZtHyuxxU5_tWTcyYqvcymVawEnWZNxEeAMtEWm0oqw8L2NeF4
+  """
+  icon(height: Int, width: Int): String
+
+  """Charm min price"""
+  minPrice: Money
+
+  """Mnemonic name of charm @example usp_jewel_0"""
+  name: String!
+
+  """Charm pattern (paint seed) @example 55123"""
+  pattern: Int
+
+  """Title of charm @example Charm | Glamour Shot"""
+  title: String!
+}
+
+type CSGOCharmGradient {
+  """Gradient color points in CSROI dataset order"""
+  points: [CSGOCharmGradientPoint!]!
+
+  """
+  CSROI YouTube video url with timecode of this pattern @example https://youtu.be/XsEMnb6a3oE?t=28
+  """
+  youtubeLink: String
+}
+
+type CSGOCharmGradientPoint {
+  """Hex color @example #A26F58"""
+  color: String!
+
+  """Gradient zone label from CSROI @example Center Blade"""
+  name: String
+}
+
+enum CSGOExterior {
+  BATTLE_SCARED
+  FACTORY_NEW
+  FIELD_TESTED
+  MINIMAL_WEAR
+  NOT_PAINTED
+  WELL_WORN
+}
+
+type CSGOInventoryItem implements InventoryItemInterface {
+  """Amount @example 1"""
+  amount: Int!
+
+  """The ID of the app which owns the item @example 730"""
+  appId: String!
+
+  """Steam Asset ID @example 34070244882"""
+  assetId: String!
+
+  """Can item sold via instant sell"""
+  canInstantSell: Boolean
+
+  """Gradient colors for standalone charm items (null for non-charm items)"""
+  charmGradient: CSGOCharmGradient
+
+  """Charms"""
+  charms: [CSGOCharm]
+
+  """The first half of the item cache identifier @example 5568220466"""
+  classId: String!
+
+  """Steam Context ID @example 2"""
+  contextId: String!
+
+  """Is on deal"""
+  deal: MarketDeal
+
+  """Description of item"""
+  description: SteamItemInterface
+
+  """Exterior enum value"""
+  exteriorEnum: CSGOExterior
+
+  """Fade percentage (80.0–100.0), null for non-fade skins @example 95.13"""
+  fade: Float
+
+  """
+  Fade rank (1 = best or worst, higher = more mid), null for non-fade skins @example 234
+  """
+  fadeRank: Int
+
+  """Float value @example 0.3169"""
+  float: String
+
+  """Item ID @example 1ee7cfde-8f2a-697e-8118-0242ac17000a"""
+  id: String!
+
+  """The second half of the item cache identifier @example 188530139"""
+  instanceId: String!
+
+  """Price for instant sell"""
+  instantSellPrice: Money
+
+  """
+  Is additional params missed, for example float value or stickers @example true
+  """
+  isAdditionalDataMissed: Boolean!
+
+  """Is stickers info missed @example true"""
+  isStickersDataMissed: Boolean!
+
+  """
+  Inspect link @example steam://rungame/730/76561202255233023/+csgo_econ_action_preview%20S76561199554039019A34295908728D14702216662888361045
+  """
+  link: String
+
+  """Max price for sell"""
+  maxPriceForSell: Money
+
+  """Min price in catalog"""
+  minPrice: Money
+
+  """Name hash of item"""
+  nameHash: String
+
+  """Matched order info"""
+  order: MarketOrderPublic
+
+  """Finish catalog @example 46"""
+  paintIndex: String
+
+  """Pattern Template @example 730"""
+  paintSeed: String
+  phase: String
+
+  """Phase enum value"""
+  phaseEnum: CSGOPhase
+
+  """Is on sale"""
+  product: MarketProduct
+
+  """
+  Price the owner paid for this item on WhiteMarket. Null for items not bought on WhiteMarket or when viewed by non-owner
+  """
+  purchasePrice: Money
+
+  """
+  Whether the recommended price is higher or lower than the purchase price. Null when either price is missing
+  """
+  purchasePriceIndicator: PriceIndicator
+
+  """Recommended price for sell"""
+  recommendedPrice: Money
+
+  """
+  Seller steam ID. Please contact support for this feature @example 76561199387616956
+  """
+  sellerSteamId: String
+
+  """Qty of similar items in inventory @example 42"""
+  similarQty: Int
+
+  """Stickers titles @example Sticker | SK Gaming (Gold) | Atlanta 2017"""
+  stickerTitles: [String] @deprecated(reason: "Use stickers.title instead")
+
+  """Stickers"""
+  stickers: [CSGOSticker]
+
+  """Updated at @example 2023-11-29T23:33:27+0000"""
+  updatedAt: DateTime!
+}
+
+enum CSGOPhase {
+  BLACK_PEARL
+  EMERALD
+  PHASE1
+  PHASE2
+  PHASE3
+  PHASE4
+  RUBY
+  SAPPHIRE
+}
+
+enum CSGORarity {
+  ANCIENT
+  ANCIENT_CHARACTER
+  ANCIENT_WEAPON
+  COMMON
+  COMMON_WEAPON
+  CONTRABAND
+  DEFAULT_WEAPON
+  LEGENDARY
+  LEGENDARY_CHARACTER
+  LEGENDARY_WEAPON
+  MYTHICAL
+  MYTHICAL_CHARACTER
+  MYTHICAL_WEAPON
+  RARE
+  RARE_CHARACTER
+  RARE_WEAPON
+  UNCOMMON_WEAPON
+}
+
+type CSGOSteamContainItem {
+  """
+  Normal icon @example https:\/\/steamcdn-a.akamaihd.net\/apps\/730\/icons\/econ\/default_generated\/weapon_ak47_cu_ak47_rubber_light_large.5836c38d3037a5a1f90ffdc8c9d0b94367ca8efd.png
+  """
+  icon(height: Int, width: Int): String!
+
+  """The item's display name. @example Sealed Graffiti | Loser (SWAT Blue)"""
+  name: String!
+  rarityEnum: CSGORarity
+}
+
+type CSGOSteamItem implements SteamItemInterface {
+  """The ID of the app which owns the item @example 730"""
+  appId: String!
+  category: LocalizedValue! @deprecated(reason: "Use categoryEnum instead")
+
+  """Our category"""
+  categoryEnum: CSGOCategory!
+
+  """Our category title"""
+  categoryTitle: String!
+
+  """
+  Charm image @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/atlanta2017/sk_gold.0310a91ffcbe6720557e12e0e8b7352dd8576774.png
+  """
+  charmImage: String!
+
+  """Charm min price"""
+  charmMinPrice: Money
+  charmTitle: String!
+
+  """The first half of the item cache identifier @example 5568220466"""
+  classId: String!
+
+  """Item's collection name"""
+  collection: LocalizedValue
+
+  """For cases. Common items in case"""
+  containItems: [CSGOSteamContainItem!]!
+
+  """For cases. Rare items in case"""
+  containRareItems: [CSGOSteamContainItem!]!
+
+  """For cases. Common items in case"""
+  contains: [String!]! @deprecated(reason: "Use containItems instead")
+
+  """For cases. Rare items in case"""
+  containsRare: [String!]! @deprecated(reason: "Use containRareItems instead")
+
+  """The item's description. @example Some description"""
+  description: String
+
+  """Exterior type"""
+  exterior: LocalizedValue
+
+  """
+  Normal icon @example https:\/\/steamcdn-a.akamaihd.net\/apps\/730\/icons\/econ\/default_generated\/weapon_ak47_cu_ak47_rubber_light_large.5836c38d3037a5a1f90ffdc8c9d0b94367ca8efd.png
+  """
+  icon(height: Int, width: Int): String
+
+  """
+  Large icon @example https:\/\/steamcdn-a.akamaihd.net\/apps\/730\/icons\/econ\/default_generated\/weapon_ak47_cu_ak47_rubber_light_large.5836c38d3037a5a1f90ffdc8c9d0b94367ca8efd.png
+  """
+  iconLarge(height: Int, width: Int): String
+
+  """The second half of the item cache identifier @example 188530139"""
+  instanceId: String!
+
+  """DEPRECATED"""
+  isMarketable: Boolean! @deprecated(reason: "Please do not use it")
+
+  """"""
+  isSouvenir: Boolean!
+
+  """"""
+  isStatTrak: Boolean!
+
+  """true if the item can be traded, false if not @example true"""
+  isTradeable: Boolean!
+
+  """
+  How many days for which the item will be untradable after being sold on the market. @example 7
+  """
+  marketTradeableRestriction: Int!
+
+  """The item's display name. @example Sealed Graffiti | Loser (SWAT Blue)"""
+  name: String!
+
+  """
+  The item's universal market name. This identifies the item's market listing page. @example Sealed Graffiti | Loser (SWAT Blue)
+  """
+  nameHash: String!
+
+  """Rarity"""
+  rarity: LocalizedValue
+
+  """First part before | at name @example Souvenir Five-SeveN"""
+  short: String
+
+  """First part before | at name in english @example Souvenir Five-SeveN"""
+  shortEn: String
+
+  """Second part after | at name @example Contractor"""
+  skin: String
+
+  """Second part after | at name in english @example Contractor"""
+  skinEn: String
+
+  """Steam price"""
+  steamPrice: Money
+  stickerImages: [String!]! @deprecated(reason: "Please do not use it")
+  stickerTitles: String! @deprecated(reason: "Please do not use it")
+  subcategory: LocalizedValue! @deprecated(reason: "Use subcategoryEnum instead")
+
+  """Our category"""
+  subcategoryEnum: CSGOSubcategory
+
+  """Our subcategory title"""
+  subcategoryTitle: String
+  subtype: LocalizedValue @deprecated(reason: "Use subtypeEnum instead")
+  subtypeEnum: CSGOSubtype
+  type: LocalizedValue! @deprecated(reason: "Use typeEnum instead")
+  typeEnum: CSGOType
+
+  """Updated at @example 2023-11-29T23:33:27+0000"""
+  updatedAt: DateTime!
+}
+
+type CSGOSticker {
+  """Film of sticker @example HOLO"""
+  film: CSGOStickerFilm
+
+  """
+  Image of sticker @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  icon(height: Int, width: Int): String
+
+  """Sticker min price"""
+  minPrice: Money
+
+  """Mnemonic name of sticker @example paris2023_signature_floppy_4"""
+  name: String!
+
+  """
+  Sticker position X offset on the weapon, null when unknown @example -0.1875
+  """
+  offsetX: String
+
+  """
+  Sticker position Y offset on the weapon, null when unknown @example 0.0625
+  """
+  offsetY: String
+
+  """Title of sticker @example Sticker | floppy | Paris 2023"""
+  title: String!
+
+  """
+  Sticker scrape wear from 0 (pristine) to 1 (fully scraped), null when unknown @example 0.57
+  """
+  wear: String
+}
+
+enum CSGOStickerFilm {
+  FOIL
+  GLITTER
+  GOLD
+  HOLO
+  LENTICULAR
+}
+
+type CSGOStickerSuggestion {
+  """Film of sticker @example HOLO"""
+  film: CSGOStickerFilm
+
+  """
+  Image of sticker @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  icon(height: Int, width: Int): String
+
+  """Mnemonic name of sticker @example paris2023_signature_floppy_4"""
+  name: String!
+
+  """Title of sticker @example Sticker | floppy | Paris 2023"""
+  title: String!
+
+  """Total products with sticker @example 42"""
+  total: Int!
+}
+
+type CSGOStickerSuggestions {
+  """How many suggestions beyond results @example 42"""
+  moreCount: Int!
+  suggestions: [CSGOStickerSuggestion]
+}
+
+enum CSGOSubcategory {
+  AK47
+  AUG
+  AWP
+  BIZON
+  C4
+  COLLECTIBLE
+  CUSTOM_PLAYER_BRAZILIAN_1ST_BATTALION
+  CUSTOM_PLAYER_ELITE_CREW
+  CUSTOM_PLAYER_FBI
+  CUSTOM_PLAYER_FBI_HRT
+  CUSTOM_PLAYER_FBI_SNIPER
+  CUSTOM_PLAYER_FBI_SWAT
+  CUSTOM_PLAYER_GENDARMERIE_NATIONALE
+  CUSTOM_PLAYER_GUERRILLA_WARFARE
+  CUSTOM_PLAYER_KSK
+  CUSTOM_PLAYER_NSWC_SEAL
+  CUSTOM_PLAYER_NZSAS
+  CUSTOM_PLAYER_PHOENIX
+  CUSTOM_PLAYER_SABRE
+  CUSTOM_PLAYER_SABRE_FOOTSOLDIER
+  CUSTOM_PLAYER_SAS
+  CUSTOM_PLAYER_SEAL_FROGMAN
+  CUSTOM_PLAYER_SWAT
+  CUSTOM_PLAYER_TACP_CAVALRY
+  CUSTOM_PLAYER_THE_PROFESSIONALS
+  CUSTOM_PLAYER_USAF_TACP
+  CZ75A
+  DEAGLE
+  ELITE
+  FAMAS
+  FIVESEVEN
+  G3SG1
+  GALILAR
+  GLOCK
+  GLOVE_BLOODHOUND
+  GLOVE_BROKEN_FANG
+  GLOVE_FINGERLESS
+  GLOVE_HAND_WRAPS
+  GLOVE_HARDKNUCKLE
+  GLOVE_HYDRA
+  GLOVE_MOTORCYCLE
+  GLOVE_SLICK
+  GLOVE_SPECIALIST
+  GLOVE_SPORT
+  HKP2000
+  KNIFE
+  KNIFE_BAYONET
+  KNIFE_BOWIE
+  KNIFE_BUTTERFLY
+  KNIFE_CLASSIC
+  KNIFE_CORD
+  KNIFE_FALCHION
+  KNIFE_FLIP
+  KNIFE_GUT
+  KNIFE_KARAMBIT
+  KNIFE_KUKRI
+  KNIFE_M9_BAYONET
+  KNIFE_NAVAJA
+  KNIFE_NOMAD
+  KNIFE_SHADOW_DAGGER
+  KNIFE_SKELETON
+  KNIFE_STILETTO
+  KNIFE_SURVIVAL
+  KNIFE_TACTICAL
+  KNIFE_TALON
+  KNIFE_URSUS
+  M4A1
+  M4A1S
+  M249
+  MAC10
+  MAG7
+  MP5SD
+  MP7
+  MP9
+  MUSIC_KIT
+  NEGEV
+  NOVA
+  P90
+  P250
+  REVOLVER
+  SAWEDOFF
+  SCAR20
+  SG556
+  SPRAY
+  SSG08
+  STICKER
+  STICKER_SLAB
+  TASER
+  TEC9
+  TICKET
+  TOOL
+  TOOL_GIFT_TAG
+  TOOL_KEY_CHAIN
+  TOOL_NAME_TAGTAG
+  TOOL_NAME_TAG_TAG
+  TOOL_PATCH
+  TOOL_WEAPON_CASE_KEY_TAG
+  UMP45
+  USP_SILENCER
+  WEAPON_CASE
+  WEAPON_CASE_CAPSULE
+  WEAPON_CASE_OTHER
+  WEAPON_CASE_PATCH_PACK
+  WEAPON_CASE_SOUVENIR_PACKAGE
+  WEAPON_CASE_WEAPON_CASE
+  XM1014
+}
+
+enum CSGOSubtype {
+  AK47
+  AUG
+  AWP
+  BIZON
+  C4
+  COLLECTIBLE
+  CUSTOM_PLAYER_BRAZILIAN_1ST_BATTALION
+  CUSTOM_PLAYER_ELITE_CREW
+  CUSTOM_PLAYER_FBI
+  CUSTOM_PLAYER_FBI_HRT
+  CUSTOM_PLAYER_FBI_SNIPER
+  CUSTOM_PLAYER_FBI_SWAT
+  CUSTOM_PLAYER_GENDARMERIE_NATIONALE
+  CUSTOM_PLAYER_GUERRILLA_WARFARE
+  CUSTOM_PLAYER_KSK
+  CUSTOM_PLAYER_NSWC_SEAL
+  CUSTOM_PLAYER_NZSAS
+  CUSTOM_PLAYER_PHOENIX
+  CUSTOM_PLAYER_SABRE
+  CUSTOM_PLAYER_SABRE_FOOTSOLDIER
+  CUSTOM_PLAYER_SAS
+  CUSTOM_PLAYER_SEAL_FROGMAN
+  CUSTOM_PLAYER_SWAT
+  CUSTOM_PLAYER_TACP_CAVALRY
+  CUSTOM_PLAYER_THE_PROFESSIONALS
+  CUSTOM_PLAYER_USAF_TACP
+  CZ75A
+  DEAGLE
+  ELITE
+  FAMAS
+  FIVESEVEN
+  G3SG1
+  GALILAR
+  GLOCK
+  GLOVE_BLOODHOUND
+  GLOVE_BROKEN_FANG
+  GLOVE_FINGERLESS
+  GLOVE_HAND_WRAPS
+  GLOVE_HARDKNUCKLE
+  GLOVE_HYDRA
+  GLOVE_MOTORCYCLE
+  GLOVE_SLICK
+  GLOVE_SPECIALIST
+  GLOVE_SPORT
+  HKP2000
+  KNIFE
+  KNIFE_BAYONET
+  KNIFE_BOWIE
+  KNIFE_BUTTERFLY
+  KNIFE_CLASSIC
+  KNIFE_CORD
+  KNIFE_FALCHION
+  KNIFE_FLIP
+  KNIFE_GUT
+  KNIFE_KARAMBIT
+  KNIFE_KUKRI
+  KNIFE_M9_BAYONET
+  KNIFE_NAVAJA
+  KNIFE_NOMAD
+  KNIFE_SHADOW_DAGGER
+  KNIFE_SKELETON
+  KNIFE_STILETTO
+  KNIFE_SURVIVAL
+  KNIFE_TACTICAL
+  KNIFE_TALON
+  KNIFE_URSUS
+  M4A1
+  M4A1S
+  M249
+  MAC10
+  MAG7
+  MP5SD
+  MP7
+  MP9
+  MUSIC_KIT
+  NEGEV
+  NOVA
+  P90
+  P250
+  REVOLVER
+  SAWEDOFF
+  SCAR20
+  SG556
+  SPRAY
+  SSG08
+  STICKER
+  STICKER_SLAB
+  TASER
+  TEC9
+  TICKET
+  TOOL
+  TOOL_GIFT_TAG
+  TOOL_KEY_CHAIN
+  TOOL_NAME_TAGTAG
+  TOOL_NAME_TAG_TAG
+  TOOL_PATCH
+  TOOL_WEAPON_CASE_KEY_TAG
+  UMP45
+  USP_SILENCER
+  WEAPON_CASE
+  WEAPON_CASE_CAPSULE
+  WEAPON_CASE_OTHER
+  WEAPON_CASE_PATCH_PACK
+  WEAPON_CASE_SOUVENIR_PACKAGE
+  WEAPON_CASE_WEAPON_CASE
+  XM1014
+}
+
+enum CSGOType {
+  C4
+  COLLECTIBLE
+  CUSTOM_PLAYER
+  EQUIPMENT
+  HANDS
+  KNIFE
+  MACHINEGUN
+  MUSIC_KIT
+  PISTOL
+  RIFFLE
+  SHOTGUN
+  SMG
+  SNIPER_RIFLE
+  SPRAY
+  TICKET
+  TOOL
+  TOOL_GIFT_TAG
+  TOOL_KEY_CHAIN
+  TOOL_NAME_TAG_TAG
+  TOOL_PATCH
+  TOOL_STICKER
+  TOOL_WEAPON_CASE_KEY_TAG
+  WEAPON_CASE
+}
+
+enum CatalogColor {
+  BLACK
+  BLUE
+  BROWN
+  CYAN
+  GRAY
+  GREEN
+  ORANGE
+  PINK
+  PURPLE
+  RED
+  UNKNOWN
+  WHITE
+  YELLOW
+}
+
+enum CryptoCurrency {
+  BTC
+  DOGE
+  ETH
+  LTC
+  SOL
+  USDC
+  USDT
+  WBT
+}
+
+enum CryptoNetwork {
+  ARBITRUM
+  BASE
+  BEP20
+  BTC
+  CCHAIN
+  DOGE
+  ERC20
+  LTC
+  NEAR
+  OPTIMISM
+  POLYGON
+  SCROLL
+  SOL
+  TRC20
+  WHITECHAIN
+}
+
+"""Currency @example USD"""
+enum Currency {
+  """Main currency"""
+  USD
+}
+
+"""Represent date & time @example 2023-11-14T13:34:36+0000"""
+scalar DateTime
+
+"""DateTime range"""
+input DateTimeRangeInput {
+  """Point from @example 2023-11-29T23:33:27+0000"""
+  from: DateTime
+
+  """Point to @example 2023-11-29T23:33:27+0000"""
+  to: DateTime
+}
+
+"""Money range"""
+input DecimalNotNullRangeInput {
+  """From @example 1.23"""
+  from: String!
+
+  """To @example 2.34"""
+  to: String!
+}
+
+enum DeliveryPromise {
+  """Seller promises delivery or cancel in less than 1 hour"""
+  HOUR1
+
+  """Seller promises delivery or cancel in less than 12 hours"""
+  HOURS12
+
+  """Seller promises delivery or cancel in less than 24 hours"""
+  HOURS24
+
+  """Seller promises delivery or cancel in less than 10 minutes"""
+  MINUTES10
+}
+
+enum DeliveryType {
+  """Fully automatic sending by seller"""
+  AUTO
+
+  """Seller must send trade offer manually"""
+  MANUAL
+
+  """Seller must confirm trade offer in Steam mobile app manually"""
+  SEMI
+}
+
+"""Represent file"""
+scalar FileUpload
+
+"""Used for forward pagination"""
+input ForwardPaginationInput {
+  """Cursor @example Cursor value from response (pageInfo -> endCursor)"""
+  after: String
+
+  """How many records to retrieve @example 50"""
+  first: Int
+}
+
+type IntegerRange {
+  """From @example 12"""
+  from: Int!
+
+  """To @example 23"""
+  to: Int!
+}
+
+"""Inventory items connection"""
+type InventoryItemConnection {
+  """Edges of the connection"""
+  edges: [InventoryItemConnectionEdge]
+
+  """Page info of the connection"""
+  pageInfo: PageInfo
+
+  """Total count of items in the connection."""
+  totalCount: Int
+}
+
+type InventoryItemConnectionEdge {
+  """The edge cursor"""
+  cursor: String!
+
+  """Node of the Edge"""
+  node: InventoryItemInterface
+}
+
+interface InventoryItemInterface {
+  """Amount @example 1"""
+  amount: Int!
+
+  """The ID of the app which owns the item @example 730"""
+  appId: String!
+
+  """Steam Asset ID @example 34070244882"""
+  assetId: String!
+
+  """Can item sold via instant sell"""
+  canInstantSell: Boolean
+
+  """The first half of the item cache identifier @example 5568220466"""
+  classId: String!
+
+  """Steam Context ID @example 2"""
+  contextId: String!
+
+  """Is on deal"""
+  deal: MarketDeal
+
+  """Description of item"""
+  description: SteamItemInterface
+
+  """Item ID @example 1ee7cfde-8f2a-697e-8118-0242ac17000a"""
+  id: String!
+
+  """The second half of the item cache identifier @example 188530139"""
+  instanceId: String!
+
+  """Price for instant sell"""
+  instantSellPrice: Money
+
+  """
+  Is additional params missed, for example float value or stickers @example true
+  """
+  isAdditionalDataMissed: Boolean!
+
+  """Is stickers info missed @example true"""
+  isStickersDataMissed: Boolean!
+
+  """Min price in catalog"""
+  minPrice: Money
+
+  """Name hash of item"""
+  nameHash: String
+
+  """Matched order info"""
+  order: MarketOrderPublic
+
+  """Is on sale"""
+  product: MarketProduct
+
+  """
+  Price the owner paid for this item on WhiteMarket. Null for items not bought on WhiteMarket or when viewed by non-owner
+  """
+  purchasePrice: Money
+
+  """
+  Whether the recommended price is higher or lower than the purchase price. Null when either price is missing
+  """
+  purchasePriceIndicator: PriceIndicator
+
+  """Recommended price for sell"""
+  recommendedPrice: Money
+
+  """
+  Seller steam ID. Please contact support for this feature @example 76561199387616956
+  """
+  sellerSteamId: String
+
+  """Qty of similar items in inventory @example 42"""
+  similarQty: Int
+
+  """Updated at @example 2023-11-29T23:33:27+0000"""
+  updatedAt: DateTime!
+}
+
+enum Locale {
+  DE_DE
+  EN_US
+  ES_ES
+  FR_FR
+  PL_PL
+  PT_PT
+  RU_RU
+  TR_TR
+  UK_UA
+}
+
+type LocalizedValue {
+  """Universal value @example CSGO_Type_Spray"""
+  key: String!
+
+  """Translated value @example Spray or Grafiti precintado"""
+  value: String!
+}
+
+enum LogicOperand {
+  AND
+  OR
+}
+
+"""Filters and sorts for market deals history"""
+input MarkerDealHistorySearchInput {
+  """Market deal history action type"""
+  action: MarketDealActionType
+
+  """Asset ids @example 123"""
+  assetIds: [String!]
+  color: [CatalogColor!] @deprecated(reason: "Use colorEnum instead")
+
+  """Skin color from CSCatalog"""
+  colorEnum: [CatalogColor!]
+  createdAt: DateTimeRangeInput
+
+  """CS2 Contain or not charm"""
+  csgoCharm: Boolean
+
+  """Steam collection @example set_gamma_2"""
+  csgoCollection: String
+  csgoExterior: [String!] @deprecated(reason: "Use csgoExteriorEnum instead")
+
+  """CS2 Exterior"""
+  csgoExteriorEnum: [CSGOExterior!]
+
+  """CS2 Float from @example 0.1234"""
+  csgoFloatFrom: String
+
+  """CS2 Float to @example 0.2345"""
+  csgoFloatTo: String
+
+  """Steam collection @example 878"""
+  csgoPattern: Int
+  csgoPhase: CSGOPhase @deprecated(reason: "Use csgoPhaseEnum instead")
+
+  """If appId = CSGO. CSGO Item Category @example BLACK_PEARL"""
+  csgoPhaseEnum: CSGOPhase
+  csgoRarity: [String!] @deprecated(reason: "Use csgoRarityEnum instead")
+
+  """CS2 Rarity"""
+  csgoRarityEnum: [CSGORarity!]
+
+  """CS2 Souvenir"""
+  csgoSouvenir: Boolean
+
+  """CS2 StatTrak"""
+  csgoStatTrak: Boolean
+
+  """CS2 Film of Sticker"""
+  csgoStickerFilm: CSGOStickerFilm
+
+  """
+  CS2 Sticker Names. Use market_csgo_stickers_suggestion for search @example paris2023_signature_floppy_4
+  """
+  csgoStickerNames: [String!]
+
+  """CS2 Sticker Names By Slot @example cph2024_team_navi"""
+  csgoStickerNamesBySlot: [String]
+
+  """CS2 Sticker Names Operation"""
+  csgoStickerNamesOperand: LogicOperand
+
+  """CS2 Player of Sticker @example 16839456"""
+  csgoStickerPlayer: Int
+
+  """CS2 Team of Sticker @example 28"""
+  csgoStickerTeam: Int
+
+  """CS2 Tournament of Sticker @example 22"""
+  csgoStickerTournament: Int
+
+  """CS2 Stickers"""
+  csgoStickers: Boolean
+
+  """Product name to search @example knife"""
+  name: String
+
+  """Product name hash to search strictly @example AK-47 | Vulcan"""
+  nameHash: String
+
+  """Product name to search strictly or not"""
+  nameStrict: Boolean
+
+  """Whether the deal was created by an order."""
+  onlyForOrders: Boolean
+
+  """Price from"""
+  price: MoneyRangeInput
+
+  """Sort"""
+  sort: MarketDealHistorySortInput
+
+  """Market deal history status"""
+  status: MarketDealHistoryStatus
+}
+
+"""Market deal"""
+type MarketDeal {
+  """Buyer"""
+  buyer: PersonPublic!
+
+  """
+  How long should you wait before submitting a request to cancel a deal by a buyer @example 1800
+  """
+  cancelByBuyerNeedWait: Int
+
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Deal custom ID @example my_id_42"""
+  customId: String
+
+  """Delivery type @example AUTO"""
+  deliveryType: DeliveryType!
+
+  """Expired at @example 2023-11-29T23:33:27+0000"""
+  expiredAt: DateTime!
+
+  """Group ID @example 1ee796f9-f855-630e-8e7e-0242ac160005"""
+  groupId: String
+
+  """Deal ID @example 1ee796f9-f855-630e-8e7e-0242ac160005"""
+  id: String!
+
+  """Is cancel supported by buyer"""
+  isCancelByBuyerSupported: Boolean!
+
+  """
+  Is trade protected by Steam and you need wait until settlementTimeAt to get funds
+  """
+  isTradeProtected: Boolean!
+
+  """Item info"""
+  item: InventoryItemInterface
+
+  """
+  ID of the limit order that triggered this deal, if any @example 1ee796f9-f855-630e-8e7e-0242ac160005
+  """
+  orderId: String
+
+  """Price"""
+  price: Money!
+
+  """Product"""
+  product: MarketProductHistory!
+
+  """Receiver"""
+  receiver: PersonSteam!
+
+  """
+  Receiver's Trade URL in Steam @example https://steamcommunity.com/tradeoffer/new/?partner=ID&token=TOKEN
+  """
+  receiverTradeUrl: String
+
+  """Seller"""
+  seller: PersonPublic!
+
+  """Expired at @example 2023-11-29T23:33:27+0000"""
+  settlementTimeAt: DateTime
+
+  """Deal status @example BUYER_OFFERED"""
+  status: MarketDealStatus!
+
+  """Steam offer ID @example 6795949861"""
+  steamId: String
+
+  """Total price"""
+  totalPrice: Money
+
+  """Steam trade ID @example 825964796568440469"""
+  tradeId: String
+}
+
+enum MarketDealActionType {
+  BUY
+  SELL
+}
+
+enum MarketDealCancelReason {
+  BUYER_INVENTORY_PRIVATE
+  BUYER_NOT_TRADEABLE
+  BUYER_OR_SELLER_NOT_TRADEABLE
+  BUYER_STEAM_CANCELLED
+  BUYER_STEAM_FAMILY_VIEW
+  BUYER_TOO_MANY_FAILED_ATTEMPTS
+  BUYER_TRADE_URL_INVALID
+  CANCEL_BY_ADMIN
+  INTERNAL
+  NO_FUNDS
+  SELLER_APIKEY_INVALID
+  SELLER_NOT_TRADEABLE
+  SELLER_STEAM_CANCELLED
+  SELLER_STEAM_FAMILY_VIEW
+  SELLER_TRADE_URL_INVALID
+  SKIN_UNAVAILABLE
+  STEAM_ISSUES
+  STEAM_SENDING_LIMIT_EXCEED
+  STEAM_VAC_BAN
+  UNKNOWN
+}
+
+enum MarketDealExternalCancelReason {
+  BUYER_INVENTORY_PRIVATE
+  BUYER_NOT_TRADEABLE
+  BUYER_STEAM_FAMILY_VIEW
+  SELLER_NOT_TRADEABLE
+  SKIN_UNAVAILABLE
+  STEAM_ISSUES
+  STEAM_ISSUES_15
+  STEAM_SENDING_LIMIT_EXCEED
+  STEAM_VAC_BAN
+  UNKNOWN
+}
+
+"""Market deal history"""
+type MarketDealHistory {
+  """Amount @example 1"""
+  amount: Int!
+
+  """The ID of the app which owns the item @example 730"""
+  appId: String!
+
+  """Archived at @example 2023-11-29T23:33:27+0000"""
+  archivedAt: DateTime!
+
+  """Steam Asset ID @example 34070244882"""
+  assetId: String!
+
+  """Buyer"""
+  buyer: PersonPublic!
+
+  """Cancel reason @example BUYER_NOT_TRADEABLE"""
+  cancelReason: MarketDealCancelReason
+
+  """The first half of the item cache identifier @example 5568220466"""
+  classId: String!
+
+  """Comment @example Seller is not tradeable"""
+  comment: String
+
+  """Steam Context ID @example 2"""
+  contextId: String!
+
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Deal custom ID @example my_id_42"""
+  customId: String
+
+  """Delivery type @example AUTO"""
+  deliveryType: DeliveryType!
+
+  """Group ID @example 1ee796f9-f855-630e-8e7e-0242ac160005"""
+  groupId: String
+
+  """Deal ID @example 1ee796f9-f855-630e-8e7e-0242ac160005"""
+  id: String!
+
+  """The second half of the item cache identifier @example 188530139"""
+  instanceId: String!
+
+  """
+  ID of the limit order that triggered this deal, if any @example 1ee796f9-f855-630e-8e7e-0242ac160005
+  """
+  orderId: String
+
+  """Price"""
+  price: Money!
+
+  """Price without fee"""
+  priceNet: Money
+
+  """Product"""
+  product: MarketProductHistory!
+
+  """Third party receiver steam ID, if exist @example 76561199128534719"""
+  receiverSteamId: String
+
+  """If reversed penalty value. Usually for buyer"""
+  reversePenaltyValue: Money
+
+  """If reversed refund value. Usually for seller"""
+  reverseRefundValue: Money
+
+  """Rollback at @example 2023-11-29T23:33:27+0000"""
+  rollbackAt: DateTime
+
+  """Seller"""
+  seller: PersonPublic!
+
+  """Status @example BUYER_OFFERED"""
+  status: MarketDealStatus!
+
+  """Steam offer ID @example 6795949861"""
+  steamId: String
+}
+
+"""Market deal history connection"""
+type MarketDealHistoryConnection {
+  """Edges of the connection"""
+  edges: [MarketDealHistoryConnectionEdge]
+
+  """Page info of the connection"""
+  pageInfo: PageInfo
+
+  """Total count of items in the connection."""
+  totalCount: Int
+}
+
+type MarketDealHistoryConnectionEdge {
+  """The edge cursor"""
+  cursor: String!
+
+  """Node of the Edge"""
+  node: MarketDealHistory
+}
+
+enum MarketDealHistorySortField {
+  CREATED_AT
+  PRICE
+}
+
+"""Sort"""
+input MarketDealHistorySortInput {
+  """Field for sort"""
+  field: MarketDealHistorySortField!
+
+  """Type of sort"""
+  type: SortType!
+}
+
+enum MarketDealHistoryStatus {
+  BOUGHT
+  CANCELLED
+  COMPLETED
+  EXPIRED
+  SOLD
+}
+
+"""Market deal state (id and status)"""
+type MarketDealState {
+  """Cancel reason @example BUYER_NOT_TRADEABLE"""
+  cancelReason: MarketDealCancelReason
+
+  """Deal custom ID @example my_id_42"""
+  customId: String
+
+  """Deal ID @example 1ee796f9-f855-630e-8e7e-0242ac160005"""
+  id: String!
+
+  """
+  Is trade protected by Steam and you need wait until settlementTimeAt to get funds
+  """
+  isTradeProtected: Boolean
+
+  """Price"""
+  price: Money!
+
+  """If reversed penalty value. Usually for buyer"""
+  reversePenaltyValue: Money
+
+  """If reversed refund value. Usually for seller"""
+  reverseRefundValue: Money
+
+  """Expired at @example 2023-11-29T23:33:27+0000"""
+  settlementTimeAt: DateTime
+
+  """Status @example BUYER_OFFERED"""
+  status: MarketDealStatus!
+
+  """Steam offer ID @example 6795949861"""
+  steamId: String
+
+  """Steam trade ID @example 825964796568440469"""
+  tradeId: String
+}
+
+enum MarketDealStatus {
+  """Cancelled due to buyer’s fault, final status"""
+  BUYER_CANCELLED
+
+  """Cancel requested by buyer"""
+  BUYER_CANCEL_REQUESTED
+
+  """Expired due to buyer’s fault, final status"""
+  BUYER_EXPIRED
+
+  """For partner API is not actual"""
+  BUYER_OFFERED
+
+  """Rollback in Steam (reverse trades) by Buyer, final status"""
+  BUYER_STEAM_ROLLBACK
+
+  """Cancelled, final status"""
+  CANCELLED
+
+  """Steam offer is finished, funds are unlocked on WM, final status"""
+  COMPLETED
+
+  """
+  Steam offer is finished, but funds are not yet unlocked on WM, not final status
+  """
+  EXCHANGED
+
+  """Expired, final status"""
+  EXPIRED
+
+  """Technical status, not final"""
+  EXPIRING
+
+  """Hold, please wait approve or cancel, not final status"""
+  HOLD
+
+  """Initial status after buy, not final status"""
+  INITIATED
+
+  """Needs seller’s confirmation in Steam Mobile App, not final status"""
+  NEED_CONFIRMATION
+
+  """
+  Offered in steam by buyer to seller or seller to buyer, not final status
+  """
+  OFFERED
+
+  """Cancelled due to seller’s fault, final status"""
+  SELLER_CANCELLED
+
+  """Expired due to seller’s fault, final status"""
+  SELLER_EXPIRED
+
+  """For partner API is not actual"""
+  SELLER_OFFERED
+
+  """Only for partner api. Waiting sending steam trade offer by seller"""
+  SELLER_SENDING_STEAM_OFFER
+
+  """Rollback in Steam (reverse trades) by Seller, final status"""
+  SELLER_STEAM_ROLLBACK
+
+  """Rollback in Steam (reverse trades), final status"""
+  STEAM_ROLLBACK
+
+  """
+  Waiting to send trade offer, because too many offers are active in Steam
+  """
+  WAITING_STEAM_QUEUE
+}
+
+enum MarketOfferType {
+  BARGAIN
+}
+
+"""Market order"""
+interface MarketOrder {
+  """The ID of the app which owns the item @example 730"""
+  app: SteamApp!
+
+  """Comment to order"""
+  comment: String
+
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Expired at @example 2023-11-29T23:33:27+0000"""
+  expiredAt: DateTime
+
+  """
+  Normal icon @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  icon(height: Int, width: Int): String
+
+  """
+  Large icon @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  iconLarge(height: Int, width: Int): String
+
+  """Order ID @example 1ee4bd8c-e669-695e-9ba4-0242ac1d0008"""
+  id: String!
+
+  """
+  External trade URL for delivery @example https://steamcommunity.com/tradeoffer/new/?partner=272985700&token=EqWnBOIL
+  """
+  link: String
+
+  """Hash name @example Sealed Graffiti | Loser (SWAT Blue)"""
+  nameHash: String!
+
+  """Price"""
+  params: [MarketOrderParamValue!]!
+
+  """Price"""
+  price: Money!
+
+  """Quantity of products @example 10"""
+  quantity: Int!
+
+  """Quantity of failed deals @example 10"""
+  quantityFailed: Int!
+
+  """Quantity of in progress deals @example 10"""
+  quantityProgress: Int!
+
+  """Quantity of success deals @example 10"""
+  quantitySuccess: Int!
+
+  """Status @example ACTIVE"""
+  status: MarketOrderStatus!
+}
+
+"""Market order connection"""
+type MarketOrderConnection {
+  """Edges of the connection"""
+  edges: [MarketOrderConnectionEdge]
+
+  """Page info of the connection"""
+  pageInfo: PageInfo
+
+  """Total count of items in the connection."""
+  totalCount: Int
+}
+
+type MarketOrderConnectionEdge {
+  """The edge cursor"""
+  cursor: String!
+
+  """Node of the Edge"""
+  node: MarketOrder
+}
+
+enum MarketOrderParam {
+  CSGO_FLOAT
+  CSGO_PHASE
+}
+
+type MarketOrderParamValue {
+  """Param name @example CSGO_FLOAT"""
+  param: MarketOrderParam!
+
+  """Depends of param @example 0.123456"""
+  value: [String]
+}
+
+interface MarketOrderPublic {
+  """The ID of the app which owns the item @example 730"""
+  app: SteamApp!
+
+  """
+  Normal icon @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  icon(height: Int, width: Int): String
+
+  """
+  Large icon @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  iconLarge(height: Int, width: Int): String
+
+  """Order ID @example 1ee4bd8c-e669-695e-9ba4-0242ac1d0008"""
+  id: String!
+
+  """Item info"""
+  inventory: InventoryItemInterface
+
+  """Is your order or not @example true"""
+  isMy: Boolean!
+
+  """Hash name @example Sealed Graffiti | Loser (SWAT Blue)"""
+  nameHash: String!
+
+  """Price"""
+  params: [MarketOrderParamValue!]!
+
+  """Price"""
+  price: Money!
+
+  """Quantity of products @example 42"""
+  quantity: Int!
+}
+
+"""Market order public connection"""
+type MarketOrderPublicConnection {
+  """Edges of the connection"""
+  edges: [MarketOrderPublicConnectionEdge]
+
+  """Page info of the connection"""
+  pageInfo: PageInfo
+
+  """Total count of items in the connection."""
+  totalCount: Int
+}
+
+type MarketOrderPublicConnectionEdge {
+  """The edge cursor"""
+  cursor: String!
+
+  """Node of the Edge"""
+  node: MarketOrderPublic
+}
+
+"""Filters and sorts for orders list"""
+input MarketOrderSearchInput {
+  """Steam application"""
+  appId: SteamApp
+
+  """CS2 Category"""
+  csgoCategory: CSGOCategory
+
+  """CS2 Exterior"""
+  csgoExteriorEnum: [CSGOExterior!]
+
+  """CS2 Rarity"""
+  csgoRarityEnum: [CSGORarity!]
+
+  """CS2 Subcategory"""
+  csgoSubcategory: CSGOSubcategory
+
+  """Get only unique (by name hash) products or not"""
+  distinctValues: Boolean
+
+  """Product name hash to search strictly @example AK-47 | Vulcan"""
+  nameHash: String
+
+  """Product name to search strictly or not"""
+  nameStrict: Boolean
+
+  """Own by user"""
+  personOwn: Boolean = false
+
+  """Price from and to"""
+  price: MoneyRangeInput
+
+  """Price from"""
+  priceFrom: MoneyInput @deprecated(reason: "Use MoneyRangeInput $price instead")
+
+  """Price to"""
+  priceTo: MoneyInput @deprecated(reason: "Use MoneyRangeInput $price instead")
+
+  """Sort"""
+  sort: MarketOrderSortInput
+}
+
+enum MarketOrderSortField {
+  CREATED_AT
+  POPULARITY
+  PRICE
+}
+
+"""Sort"""
+input MarketOrderSortInput {
+  """Field for sort"""
+  field: MarketOrderSortField!
+
+  """Type of sort"""
+  type: SortType!
+}
+
+enum MarketOrderStatus {
+  ACTIVE
+  DELETED
+  FULFILLED
+  INACTIVE_ACTION_RESTRICTED
+  INACTIVE_EMAIL_EMPTY
+  INACTIVE_EMAIL_NOT_CONFIRMED
+  INACTIVE_EXTENSION_NOT_FOUND
+  INACTIVE_FUNDS_INSUFFICIENT
+  INACTIVE_MANUAL
+  INACTIVE_NOT_TRADEABLE
+  INACTIVE_TOO_MANY_FAILS
+  INACTIVE_TRADE_LINK_NOT_FOUND
+  UNDEFINED
+}
+
+"""Product. Something to sell by person"""
+type MarketProduct {
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Qty of days on market @example 42"""
+  daysOnMarket: String!
+  deliveryPromise: DeliveryPromise!
+
+  """Delivery type @example AUTO"""
+  deliveryType: DeliveryType!
+
+  """Discount percent @example 3"""
+  discount: Int
+
+  """Discount price"""
+  discountPrice: Money
+
+  """Expired at @example 2023-11-29T23:33:27+0000"""
+  expiredAt: DateTime! @deprecated(reason: "Please do not use it")
+
+  """Product ID @example 1ee822d9-7739-6c7c-9229-0242ac17000a"""
+  id: String!
+
+  """Use item.isAdditionalDataMissed instead"""
+  isAdditionalDataMissed: Boolean! @deprecated(reason: "Use item.isAdditionalDataMissed instead")
+
+  """Person is owner of product"""
+  isOwner: Boolean!
+  isSuperDeal: Boolean
+
+  """Item info"""
+  item: InventoryItemInterface
+
+  """Lifetime of product in seconds. 31536000 is 365 days @example 31536000"""
+  lifetime: Int! @deprecated(reason: "Please do not use it")
+  offerMinPrice: Money
+  offerType: MarketOfferType
+  position: IntegerRange
+
+  """Price"""
+  price: Money!
+  promo: Promo
+  reviewResponse: String
+  screenshotId: String
+
+  """Qty of similar items on market @example 42"""
+  similarQty: Int
+
+  """
+  Product slug for URL @example glock-18-moonrise-minimal-wear-504967904487
+  """
+  slug: String!
+
+  """Is product special or not"""
+  special: Boolean!
+  state: MarketProductState
+
+  """Store info"""
+  store: PersonStore
+
+  """Qty of similar items on store @example 42"""
+  storeSimilarQty: Int
+}
+
+input MarketProductAppIdAssetIdInput {
+  app: SteamApp!
+
+  """Asset ID @example 34070244882"""
+  assetId: String!
+}
+
+input MarketProductAppIdNameHashInput {
+  app: SteamApp!
+
+  """Name hash @example ★ Moto Gloves | Finish Line (Factory New)"""
+  nameHash: String!
+
+  """
+  Optional Doppler phase. When passed, the buy matches not only by nameHash but also by phase (paint index)
+  """
+  phase: CSGOPhase
+}
+
+"""Market products connection"""
+type MarketProductConnection {
+  """Edges of the connection"""
+  edges: [MarketProductConnectionEdge]
+
+  """Page info of the connection"""
+  pageInfo: PageInfo
+
+  """Total count of items in the connection."""
+  totalCount: Int
+}
+
+type MarketProductConnectionEdge {
+  """The edge cursor"""
+  cursor: String!
+
+  """Node of the Edge"""
+  node: MarketProduct
+}
+
+input MarketProductEditInput {
+  """Asset ID @example 38384121671"""
+  assetId: String
+  price: MoneyInput!
+
+  """Inventory ID @example 1ef34673-32bf-6dbc-84bb-0242ac1e000b"""
+  productId: Uuid
+}
+
+"""Product history item"""
+type MarketProductHistory {
+  """Amount @example 1"""
+  amount: Int!
+
+  """The ID of the app which owns the item @example 730"""
+  appId: String!
+
+  """Archived at @example 2023-11-29T23:33:27+0000"""
+  archivedAt: DateTime!
+
+  """Steam Asset ID @example 34070244882"""
+  assetId: String!
+
+  """The first half of the item cache identifier @example 5568220466"""
+  classId: String!
+
+  """Steam Context ID @example 2"""
+  contextId: String!
+
+  """Delivery type @example AUTO"""
+  deliveryType: DeliveryType!
+
+  """Description of item"""
+  description: SteamItemInterface
+
+  """Product ID @example 1ed8c266-3dab-66f0-b2ff-0242ac1d0005"""
+  id: String!
+
+  """The second half of the item cache identifier @example 188530139"""
+  instanceId: String!
+
+  """Params"""
+  params: InventoryItemInterface
+
+  """Price"""
+  price: Money!
+
+  """Status @example DEAL"""
+  status: MarketProductStatus!
+
+  """Store info"""
+  store: PersonStore
+}
+
+input MarketProductNewInput {
+  """Asset ID @example 38384121671"""
+  assetId: String
+
+  """Inventory ID @example 1ef34673-32bf-6dbc-84bb-0242ac1e000b"""
+  inventoryId: Uuid
+  price: MoneyInput!
+}
+
+"""Product result of new/edit/remove operation"""
+type MarketProductResult {
+  """Error category @example market.product.not_found"""
+  errorCategory: String
+
+  """Error category @example ❗️ Oops! Item not found."""
+  errorMessage: String
+
+  """Position in request @example 1"""
+  index: Int!
+
+  """Is created or edited"""
+  isCreated: Boolean!
+  product: MarketProductUnion
+}
+
+"""Filters and sorts for products list"""
+input MarketProductSearchInput {
+  """Steam application"""
+  appId: SteamApp
+
+  """Skin color from CSCatalog"""
+  colorEnum: [CatalogColor!]
+  createdAt: DateTimeRangeInput
+
+  """CS2 Contain or not charm"""
+  csgoCharm: Boolean
+
+  """Steam collection @example set_gamma_2"""
+  csgoCollection: String
+  csgoConcreteSticker: String @deprecated(reason: "Please do not use it")
+  csgoExterior: [String!] @deprecated(reason: "Use csgoExteriorEnum instead")
+
+  """CS2 Exterior"""
+  csgoExteriorEnum: [CSGOExterior!]
+
+  """CS2 Fade percentage from @example 80.0"""
+  csgoFadeFrom: Float
+
+  """CS2 Fade rank from"""
+  csgoFadeRankFrom: Int
+
+  """CS2 Fade rank to"""
+  csgoFadeRankTo: Int
+
+  """CS2 Fade percentage to @example 100.0"""
+  csgoFadeTo: Float
+
+  """CS2 Float from @example 0.1234"""
+  csgoFloatFrom: String
+
+  """CS2 Float to @example 0.2345"""
+  csgoFloatTo: String
+
+  """CS2 Item Categories to exclude @example PISTOLS"""
+  csgoItemCategoriesExclude: [CSGOCategory!]
+  csgoItemCategory: String @deprecated(reason: "Use csgoItemCategoryEnum instead")
+
+  """CS2 Item Category @example PISTOLS"""
+  csgoItemCategoryEnum: CSGOCategory
+
+  """CS2 Item Skin @example Twilight Galaxy"""
+  csgoItemSkin: String
+
+  """CS2 Item Subcategories to exclude @example KNIFE_BOWIE"""
+  csgoItemSubcategoriesExclude: [CSGOSubcategory!]
+  csgoItemSubcategory: String @deprecated(reason: "Use csgoItemSubcategoryEnum instead")
+
+  """CS2 Item Subcategory @example weapon_glock"""
+  csgoItemSubcategoryEnum: CSGOSubcategory
+
+  """Steam collection @example 878"""
+  csgoPattern: Int
+
+  """If appId = CSGO. CSGO Phase"""
+  csgoPhase: CSGOPhase
+
+  """If appId = CSGO. CSGO Item Category @example BLACK_PEARL"""
+  csgoPhaseEnum: CSGOPhase
+  csgoRarity: [String!] @deprecated(reason: "Use csgoRarityEnum instead")
+
+  """CS2 Rarity"""
+  csgoRarityEnum: [CSGORarity!]
+
+  """CS2 Souvenir"""
+  csgoSouvenir: Boolean
+
+  """CS2 StatTrak"""
+  csgoStatTrak: Boolean
+
+  """CS2 Film of Sticker"""
+  csgoStickerFilm: CSGOStickerFilm
+
+  """
+  CS2 Sticker Names. Use market_csgo_stickers_suggestion for search @example paris2023_signature_floppy_4
+  """
+  csgoStickerNames: [String!]
+
+  """CS2 Sticker Names By Slot @example cph2024_team_navi"""
+  csgoStickerNamesBySlot: [String]
+
+  """CS2 Sticker Names Operation"""
+  csgoStickerNamesOperand: LogicOperand
+
+  """CS2 Player of Sticker @example 16839456"""
+  csgoStickerPlayer: Int
+
+  """CS2 Team of Sticker @example 28"""
+  csgoStickerTeam: Int
+
+  """CS2 Tournament of Sticker @example 22"""
+  csgoStickerTournament: Int
+
+  """CS2 Contain or not stickers"""
+  csgoStickers: Boolean
+  csgoWeapon: String @deprecated(reason: "Use csgoItemSubcategoryEnum instead")
+
+  """Delivery promise @example HOURS12"""
+  deliveryPromise: DeliveryPromise
+
+  """Delivery type @example AUTO"""
+  deliveryType: DeliveryType
+
+  """Get only unique (by name hash) products or not"""
+  distinctValues: Boolean
+
+  """Product IDs @example 1edf828f-d3c4-65ca-909c-0242ac12001d"""
+  ids: [Uuid!]
+
+  """Is popular skin or not"""
+  isPopular: Boolean
+
+  """Weapons, gloves, agent category"""
+  isWeaponAndGear: Boolean
+
+  """Product name to search @example Vulcan"""
+  name: String
+
+  """Product name hash to search strictly @example AK-47 | Vulcan"""
+  nameHash: String
+
+  """Product name to search strictly or not"""
+  nameStrict: Boolean
+
+  """Product names to search strictly @example AK-47 | Vulcan"""
+  names: [String!]
+
+  """Product names hash to search strictly @example AK-47 | Vulcan"""
+  namesHash: [String!]
+
+  """Market product offer type @example BARGAIN"""
+  offerType: MarketOfferType
+  onlyPromo: Boolean
+
+  """Price from and to"""
+  price: MoneyRangeInput
+
+  """Price from"""
+  priceFrom: MoneyInput @deprecated(reason: "Use MoneyRangeInput $price instead")
+
+  """Price to"""
+  priceTo: MoneyInput @deprecated(reason: "Use MoneyRangeInput $price instead")
+
+  """Sort"""
+  sort: MarketProductSortInput
+
+  """
+  Only products with special = true for the current person (Gold Rush cashback). Empty list if the person is not eligible. false and null do not filter
+  """
+  special: Boolean
+
+  """Store slug @example best-store"""
+  storeSlug: String
+
+  """Superdeal or not"""
+  superDeal: Boolean
+}
+
+enum MarketProductSortField {
+  CREATED
+  DISTINCT_VALUES_COUNT
+  FLOAT
+  NAME
+  ON_SALE
+  POPULARITY
+  PRICE
+  PRICE_ABS_DIFF
+  PRICE_DIFF
+  PRICE_RATIO_DIFF
+  PRODUCT_PRICE
+}
+
+"""Sort"""
+input MarketProductSortInput {
+  """Field for sort"""
+  field: MarketProductSortField!
+
+  """Type of sort"""
+  type: SortType!
+}
+
+enum MarketProductState {
+  ACTIVE
+  INACTIVE
+  OVERPRICED
+  REVIEW_DECLINED
+  REVIEW_OPEN
+  SELL_BANNED
+  VACATION
+}
+
+enum MarketProductStatus {
+  DEAL
+  DELETED
+  EXPIRED
+  GONE
+}
+
+union MarketProductUnion = MarketProduct | MarketProductHistory
+
+"""Money"""
+type Money {
+  """Currency @example USD"""
+  currency: Currency!
+
+  """Decimal value @example 42.42"""
+  value: String!
+}
+
+"""Money"""
+input MoneyInput {
+  """Currency"""
+  currency: Currency!
+
+  """Decimal value @example 42.42"""
+  value: String!
+}
+
+"""Money range"""
+input MoneyRangeInput {
+  from: MoneyInput
+  to: MoneyInput
+}
+
+"""Information about pagination in a connection."""
+type PageInfo {
+  """When paginating forwards, the cursor to continue."""
+  endCursor: String
+
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: String
+}
+
+type PartnerMutation {
+  """Authorization via Steam JWT @title Authorization Steam JWT"""
+  auth_steam_jwt(value: String!): AuthTokens!
+
+  """Authorization via Partner Token @title Authorization"""
+  auth_token: AuthTokens!
+
+  """
+  Cancel deal in sending offer state. For example if trade url is bad @title Deal Cancel Sending Offer
+  """
+  deal_cancel_sending_offer(
+    """Max 255 chars, allowed a-z, A-Z, 0-9, -, _ and whitespace"""
+    comment: String!
+
+    """ID in your system"""
+    customId: String
+    id: Uuid
+
+    """
+    Please choose carefully. If you send inappropriate reasons for cancellation, we reserve the right to apply sanctions.
+    """
+    reason: MarketDealExternalCancelReason!
+  ): MarketDealHistory!
+
+  """
+  Request deal cancel after 30 minutes if seller not sending trade offer @title Deal Request Cancel By Buyer
+  """
+  deal_request_cancel(id: Uuid!): MarketDeal!
+
+  """
+  Sending offer id after trade offer was sent @title Deal Steam Offer Sent
+  """
+  deal_steam_offer_sent(customId: String, id: Uuid, offerId: String!): MarketDeal!
+
+  """Confirm your email @title Email Confirm"""
+  email_confirm(code: String!, sign: String = null): PersonFull!
+
+  """Resend confirmation to your email @title Email Confirmation Resend"""
+  email_confirmation_resend: PersonFull!
+
+  """Set your email @title Email Set"""
+  email_set(email: PersonEmailInput!): PersonFull!
+
+  """Allow to trigger inventory update from Steam @title Inventory update"""
+  inventory_update: PersonFull!
+
+  """
+  Allows you buy a skin based on it’s nameHash value or product id @title Skin buy
+  """
+  market_buy(
+    appIdAssetIdInput: MarketProductAppIdAssetIdInput
+    appIdNameHashInput: MarketProductAppIdNameHashInput
+
+    """Max 100 chars @example my-custom-id"""
+    customId: String
+
+    """Choose delivery type for appIdNameHashInput"""
+    deliveryPromise: DeliveryPromise
+
+    """DEPRECATED"""
+    deliveryType: DeliveryType
+    id: Uuid
+    link: SteamLinkInput
+    maxPriceInput: MoneyInput
+  ): MarketDeal!
+
+  """Edits the information of your product @title Product edit"""
+  market_edit(
+    """UUID @example 1eda616b-8a8d-637e-97e1-0242ac130007"""
+    marketProductId: String!
+    price: MoneyInput!
+  ): MarketProduct!
+
+  """Edits the information of your products @title Products edit"""
+  market_edit_multiple(items: [MarketProductEditInput!]!): [MarketProductResult!]!
+
+  """Update lifetime of all products @title Update products lifetime"""
+  market_lifetime_all(
+    """In seconds, min 600 @example 86400"""
+    value: Int!
+  ): Boolean!
+
+  """
+  Placing your inventory item on the market @title Place a product for sale
+  """
+  market_new(
+    """Asset ID from inventory_my"""
+    assetId: String
+
+    """Promise delivery in period"""
+    deliveryPromise: DeliveryPromise
+
+    """If null defaults SEMI"""
+    deliveryType: DeliveryType
+
+    """Inventory ID from inventory_my"""
+    inventoryId: Uuid
+
+    """
+    Default 31536000 seconds = 365 days. Min 1 minute, max 365 days @example 31536000
+    """
+    lifetime: Int
+    price: MoneyInput!
+  ): MarketProduct!
+
+  """
+  Placing your inventory items on the market @title Place products for sale
+  """
+  market_new_multiple(
+    """Promise delivery in period"""
+    deliveryPromise: DeliveryPromise
+
+    """Default SEMI"""
+    deliveryType: DeliveryType
+    items: [MarketProductNewInput!]!
+
+    """
+    Default 31536000 seconds = 365 days. Min 1 minute, max 365 days @example 31536000
+    """
+    lifetime: Int
+  ): [MarketProductResult!]!
+
+  """Removes the product from the market @title Product removal"""
+  market_remove(marketProductId: String!): MarketProductHistory!
+
+  """Removes products from the market @title Products removal"""
+  market_remove_multiple(
+    """IDs of products @example 1ef34673-32bf-6dbc-84bb-0242ac1e000b"""
+    items: [Uuid!]!
+  ): [MarketProductResult!]!
+
+  """Activate orders on WhiteMarket @title Activate"""
+  order_activate(ids: [Uuid!]!): [MarketOrder!]!
+
+  """
+  Toggle auto activation of orders after auto deactivation on WhiteMarket @title Auto-activation
+  """
+  order_auto_activate: Boolean!
+
+  """Deactivate orders on WhiteMarket @title Deactivate"""
+  order_deactivate(ids: [Uuid!]!): [MarketOrder!]!
+
+  """Deactivate all active orders on WhiteMarket @title Deactivate all"""
+  order_deactivate_all: Int!
+
+  """Delete orders on WhiteMarket @title Delete"""
+  order_delete(ids: [Uuid!]!): [MarketOrder!]!
+
+  """Delete all inactive orders on WhiteMarket @title Delete all"""
+  order_delete_all: Int!
+
+  """Edit order on WhiteMarket @title Edit"""
+  order_edit(
+    id: Uuid!
+
+    """External trade URL for delivery"""
+    link: SteamLinkInput
+    price: MoneyInput!
+
+    """How many products do you want to buy @example 2"""
+    quantity: Int!
+  ): MarketOrder!
+
+  """Create order on WhiteMarket @title Create"""
+  order_new(
+    app: SteamApp!
+    csgoFloat: DecimalNotNullRangeInput
+    csgoPhase: CSGOPhase
+
+    """External trade URL for delivery"""
+    link: SteamLinkInput
+    nameHash: String!
+    price: MoneyInput!
+
+    """How many products do you want to buy @example 2"""
+    quantity: Int!
+  ): MarketOrder!
+
+  """Link your account to Referrer @title Referrer Link"""
+  profile_referrer(referrerInput: ReferrerInput!): Boolean!
+
+  """Change your referrer code @title Referrer Code Change"""
+  profile_referrer_code(referrerCode: ReferrerCodeInput!): Boolean!
+
+  """Edits your Steam ApiKey @title Edit Steam ApiKey"""
+  profile_steam_api_key(apiKey: SteamApiKeyInput!): Boolean! @deprecated(reason: "Do not use it")
+
+  """Edits your Steam Trade Url @title Edit Steam Trade-URL"""
+  profile_steam_link(link: SteamLinkInput!): Boolean!
+
+  """Delete your proxy to use with Steam @title Delete Steam Proxy"""
+  profile_steam_proxy_delete: Boolean!
+
+  """Edits your proxy to use with Steam @title Edit Steam Proxy"""
+  profile_steam_proxy_set(proxy: ProxyInput!, ttl: Int = null): Boolean!
+
+  """Check saved steam token @title Steam Token Check"""
+  profile_token_check: Int
+
+  """Remove steam token @title Steam Token Delete"""
+  profile_token_delete: Boolean!
+
+  """Save token from steam @title Steam Token Save"""
+  profile_token_set(ownProxyRequired: Boolean = false, payload: String!, ttl: Int = null): Boolean!
+
+  """Edits your store information @title Store Edit"""
+  store_edit(storeInput: PersonStoreInput!): PersonStore!
+
+  """Get credit funds to your balance @title Credit Get"""
+  wallet_credit_get(moneyInput: MoneyInput!): WalletDebt!
+
+  """Send funds to a person @title Send funds"""
+  wallet_transfer_send(
+    amount: MoneyInput!
+
+    """ID or Steam ID"""
+    to: String!
+  ): WalletTransfer!
+}
+
+type PartnerQuery {
+  """Get seller hold balance @title Seller Hold Balance"""
+  deal_balance_hold(currency: Currency!): Money!
+
+  """Get seller hold balances @title Seller Hold Balances"""
+  deal_balances_hold: [Money!]!
+
+  """Searching through all In Progress Deals @title Your as Buyer List"""
+  deal_buyer_list(statusesWith: [MarketDealStatus!], statusesWithout: [MarketDealStatus!]): [MarketDeal!]!
+
+  """Batch Short Info via IDs or CustomIDs @title Short Item Info"""
+  deal_buyer_statuses(
+    """Max 300 ids. Array of UUID or custom ID"""
+    ids: [String!]!
+  ): [MarketDealState!]!
+
+  """Searching through all the Deals in History @title History List"""
+  deal_history(forwardPagination: ForwardPaginationInput = null, search: MarkerDealHistorySearchInput = null): MarketDealHistoryConnection!
+
+  """Full Info regarding Archived Deal @title History Item Info"""
+  deal_history_item(customId: String, id: Uuid): MarketDealHistory!
+
+  """Full Info regarding In Progress Deal @title Deal Item Info"""
+  deal_item(customId: String, id: Uuid): MarketDeal!
+
+  """Searching through all In Progress Deals @title Your as Seller List"""
+  deal_seller_list(statusesWith: [MarketDealStatus!], statusesWithout: [MarketDealStatus!]): [MarketDeal!]!
+
+  """Receive List of Inventory Items @title List"""
+  inventory_my(forwardPagination: ForwardPaginationInput = null, search: PersonInventorySearchInput = null): InventoryItemConnection!
+
+  """
+  Returns CS2 stickers suggestion info for market_list filter @title CS2 Stickers Suggestion
+  """
+  market_csgo_stickers_suggestion(limit: Int = 10, offset: Int = 0, search: String!): CSGOStickerSuggestions!
+
+  """Returns skin info on WhiteMarket @title Skin Info"""
+  market_item(idOrSlug: String!): MarketProduct!
+
+  """Returns list of skins placed on WhiteMarket @title Skins Search"""
+  market_list(forwardPagination: ForwardPaginationInput = null, search: MarketProductSearchInput = null): MarketProductConnection!
+
+  """
+  Returns list of your skins placed on WhiteMarket @title My skins on market
+  """
+  market_my(forwardPagination: ForwardPaginationInput = null, search: MarketProductSearchInput = null): MarketProductConnection!
+
+  """Check passed trade url @title Check Steam trade URL"""
+  market_trade_url(link: SteamLinkInput!): String!
+
+  """Returns list of orders on WhiteMarket @title Search in list"""
+  order_list(forwardPagination: ForwardPaginationInput = null, search: MarketOrderSearchInput = null): MarketOrderPublicConnection!
+
+  """Returns list of your orders on WhiteMarket @title Your list"""
+  order_my(forwardPagination: ForwardPaginationInput = null): MarketOrderConnection!
+
+  """
+  Returns list of your ACTIVE orders on WhiteMarket @title Your Active list
+  """
+  order_my_active(forwardPagination: ForwardPaginationInput = null): MarketOrderConnection!
+
+  """
+  Returns list of your FULFILLED orders on WhiteMarket @title Your Fulfilled list
+  """
+  order_my_fulfilled(forwardPagination: ForwardPaginationInput = null): MarketOrderConnection!
+
+  """
+  Returns list of your INACTIVE orders on WhiteMarket @title Your INACTIVE list
+  """
+  order_my_inactive(forwardPagination: ForwardPaginationInput = null): MarketOrderConnection!
+
+  """View person profile information @title Person profile"""
+  person_profile: PersonFull!
+
+  """Returns your profile ID @title Current ID"""
+  profile_id: Uuid!
+
+  """Returns your steam proxy @title Steam proxy"""
+  profile_steam_proxy_get: String
+
+  """Information about your store @title Store info"""
+  store_my: PersonStore!
+
+  """
+  Test GraphQL request. Used only for initial test request-response @title Test request
+  """
+  test_ping: String!
+
+  """Returns Wallet Balance @title Balance By Currency"""
+  wallet_balance(currency: Currency!): Money!
+
+  """Returns your wallets balances for all currencies @title Balances"""
+  wallet_balances: [Money!]!
+
+  """Available amount of credit @title Credit Available"""
+  wallet_credit_available: Money!
+
+  """Max amount of credit @title Credit Max"""
+  wallet_credit_max: Money!
+
+  """Used amount of credit @title Credit Used"""
+  wallet_credit_used: Money!
+
+  """Returns list of wallet deposits on WhiteMarket @title Deposits"""
+  wallet_deposits: [WalletDeposit!]!
+
+  """Returns list of wallet transactions on WhiteMarket @title Transactions"""
+  wallet_transactions(forwardPagination: ForwardPaginationInput = null, search: WalletTransactionSearchInput = null): WalletTransactionConnection!
+
+  """Returns list of wallet transfers on WhiteMarket @title Transfers"""
+  wallet_transfers(forwardPagination: ForwardPaginationInput = null): WalletTransferConnection!
+
+  """Returns list of wallet withdrawals on WhiteMarket @title Withdrawals"""
+  wallet_withdrawals: [WalletWithdrawal!]!
+}
+
+enum PaymentProvider {
+  AIRWALLEX
+  BANK_CARD
+  C4S
+  DEBT
+  DIFMARK
+  DRIFFLE
+  ENEBA
+  ESEA
+  G2A
+  GAMESEAL
+  INTERNAL
+  KINGUIN
+  LIKECARD
+  MERCURYO
+  NUVEI
+  OFFGAMERS
+  PAYOP
+  PAYPAL
+  PAYSERA
+  SEAGM
+  SEPA
+  SKINSBACK
+  SOLIDGATE
+  TEST
+  TIPALTI
+  WHITEBIT
+  WHITEPAY
+  WMDROP
+  ZEN
+}
+
+type PersonAchievement {
+  """Achievement name"""
+  name: AchievementType!
+
+  """Achievement params"""
+  params: [AchievementParamUnion]
+
+  """Achievement points"""
+  points: Int!
+
+  """Achievement status"""
+  status: AchievementStatusType!
+
+  """Achievement type"""
+  type: AchievementTypeType!
+
+  """Unlocked at"""
+  unlockedAt: DateTime
+}
+
+enum PersonDeliveryPromise {
+  """Seller promises delivery or cancel in less than 1 hour"""
+  HOUR1
+
+  """Seller promises delivery or cancel in less than 12 hours"""
+  HOURS12
+
+  """Seller promises delivery or cancel in less than 10 minutes"""
+  MINUTES10
+}
+
+"""Input with person's email address"""
+input PersonEmailInput {
+  """Email Address @example hello@me.com"""
+  value: String!
+}
+
+"""Person's profile"""
+type PersonFull {
+  canBuy: Boolean!
+  canDeposit: Boolean!
+  canSell: Boolean!
+  canWithdraw: Boolean!
+  countryCodeOfCurrentLocation: String
+  countryCodeOfResidence: String
+  deliveryPromiseSelected: PersonDeliveryPromise
+
+  """Discount active to @example 2023-11-29T23:33:27+0000"""
+  discountActiveTo: DateTime
+
+  """Discount percent @example 3"""
+  discountPercent: Int
+
+  """Email @example foo@bar.com"""
+  email: String
+
+  """Person has set api key or not."""
+  hasApiKey: Boolean! @deprecated(reason: "No replacement")
+
+  """Person ID @example 1ee73dc5-a7ca-6ba6-ae97-0242ac17000b"""
+  id: String!
+
+  """Inventory update in process."""
+  inventoryNeedUpdate: Boolean! @deprecated(reason: "Its temp solution")
+
+  """Inventory updated at @example 2023-11-29T23:33:27+0000"""
+  inventoryUpdatedAt: DateTime
+
+  """Who invite you code @example 2cf289072d02c304"""
+  inviterCode: String
+  isAchievementsEnabled: Boolean!
+
+  """Person does not confirmed email address."""
+  isEmailConfirmed: Boolean!
+
+  """Person's KYC verification status"""
+  isKycVerified: Boolean!
+  isMcBattlePassEnabled: Boolean!
+  isPartnerTokenExist: Boolean!
+  isSkinTranslationEnabled: Boolean!
+
+  """Points left to the next level @example 42"""
+  leftPoints: Int
+
+  """Account level @example 42"""
+  level: Int
+  locale: Locale!
+  marketOrderAutoActivate: Boolean!
+  nickname: String! @deprecated(reason: "Do not use it")
+
+  """Personal percentage based on points earned @example 42"""
+  percent: String
+
+  """Earned points @example 42"""
+  points: Int
+
+  """Person tag passed from referrer @example JohnDoe"""
+  referralTag: String
+
+  """Person referrals count @example 42"""
+  referralsCount: Int
+
+  """Person referrer code @example 2cf289072d02c304"""
+  referrerCode: String
+
+  """Registered at @example 2023-11-29T23:33:27+0000"""
+  registeredAt: DateTime!
+  sellBannedUntil: DateTime
+
+  """Person's full steam avatar icon url"""
+  steamAvatarFull: String
+
+  """
+  Person's medium steam avatar icon url @example https://avatars.akamai.steamstatic.com/b04ab65367b1a551f8d5cd2ab972ee8cb38e335e_medium.jpg
+  """
+  steamAvatarMedium: String
+
+  """Steam ID @example 76561199128574729"""
+  steamId: String
+
+  """Person's level in Steam @example 42"""
+  steamLevel: Int
+
+  """Person's name in Steam @example SuperSonic"""
+  steamName: String
+
+  """Person's registration date in Steam @example 2023-11-29T23:33:27+0000"""
+  steamRegisteredAt: DateTime
+
+  """
+  Steam Trade URL @example https://steamcommunity.com/tradeoffer/new/?partner=1168219001&token=_sQcVAEK
+  """
+  steamTradeUrl: String
+
+  """Position in trading competition"""
+  tradingCompetitionStat: TradingCompetitionPersonItem!
+
+  """Vacation until @example 2023-11-29T23:33:27+0000"""
+  vacationUntil: DateTime
+}
+
+"""Filters and sorts for inventory list"""
+input PersonInventorySearchInput {
+  color: [CatalogColor!] @deprecated(reason: "Use colorEnum instead")
+
+  """Skin color from CSCatalog"""
+  colorEnum: [CatalogColor!]
+
+  """CS2 Charm"""
+  csgoCharm: Boolean
+
+  """Steam collection @example set_gamma_2"""
+  csgoCollection: String
+  csgoExterior: [String!] @deprecated(reason: "Use csgoExteriorEnum instead")
+
+  """CS2 Exterior"""
+  csgoExteriorEnum: [CSGOExterior!]
+
+  """CS2 Fade percentage from @example 80.0"""
+  csgoFadeFrom: Float
+
+  """CS2 Fade rank from"""
+  csgoFadeRankFrom: Int
+
+  """CS2 Fade rank to"""
+  csgoFadeRankTo: Int
+
+  """CS2 Fade percentage to @example 100.0"""
+  csgoFadeTo: Float
+
+  """CS2 Float from @example 0.1234"""
+  csgoFloatFrom: String
+
+  """CS2 Float to @example 0.2345"""
+  csgoFloatTo: String
+
+  """CS2 Item Category @example PISTOLS"""
+  csgoItemCategoryEnum: CSGOCategory
+
+  """CS2 Item Subcategory @example weapon_glock"""
+  csgoItemSubcategoryEnum: CSGOSubcategory
+
+  """Steam collection @example 878"""
+  csgoPattern: Int
+  csgoPhase: CSGOPhase @deprecated(reason: "Use csgoPhaseEnum instead")
+
+  """If appId = CSGO. CSGO Item Category @example BLACK_PEARL"""
+  csgoPhaseEnum: CSGOPhase
+  csgoRarity: [String!] @deprecated(reason: "Use csgoRarityEnum instead")
+
+  """CS2 Rarity"""
+  csgoRarityEnum: [CSGORarity!]
+
+  """CS2 Souvenir"""
+  csgoSouvenir: Boolean
+
+  """CS2 StatTrak"""
+  csgoStatTrak: Boolean
+
+  """
+  CS2 Sticker Names. Use market_csgo_stickers_suggestion for search @example paris2023_signature_floppy_4
+  """
+  csgoStickerNames: [String!]
+
+  """CS2 Sticker Names Operation"""
+  csgoStickerNamesOperand: LogicOperand
+
+  """CS2 Stickers"""
+  csgoStickers: Boolean
+
+  """Product name to search @example Vulcan"""
+  name: String
+
+  """Product name hash to search strictly @example AK-47 | Vulcan"""
+  nameHash: String
+
+  """Product name to search strictly or not"""
+  nameStrict: Boolean
+
+  """Sort"""
+  sort: MarketProductSortInput
+}
+
+"""Person's public info"""
+type PersonPublic {
+  deliveryPromise: DeliveryPromise
+
+  """Person ID @example 1ee73dc5-a7ca-6ba6-ae97-0242ac17000b"""
+  id: String!
+
+  """Please do not use it"""
+  nickname: String! @deprecated(reason: "Please do not use it")
+
+  """
+  Person's medium steam avatar icon url @example https://avatars.akamai.steamstatic.com/b04ab65367b1a551f8d5cd2ab972ee8cb38e335e_medium.jpg
+  """
+  steamAvatar: String
+
+  """Steam ID @example 76561199128574729"""
+  steamId: String
+
+  """Person's level in Steam @example 42"""
+  steamLevel: Int
+
+  """Person's name in Steam @example SuperSonic"""
+  steamName: String
+
+  """Person's registration date in Steam @example 2023-11-29T23:33:27+0000"""
+  steamRegisteredAt: DateTime
+}
+
+"""Person in Steam"""
+type PersonSteam {
+  """
+  Person's medium steam avatar icon url @example https://avatars.akamai.steamstatic.com/b04ab65367b1a551f8d5cd2ab972ee8cb38e335e_medium.jpg
+  """
+  steamAvatar: String
+
+  """Steam ID @example 76561199128574729"""
+  steamId: String!
+
+  """Person's level in Steam @example 42"""
+  steamLevel: Int
+
+  """Person's name in Steam @example SuperSonic"""
+  steamName: String
+
+  """Person's registration date in Steam @example 2023-11-29T23:33:27+0000"""
+  steamRegisteredAt: DateTime
+}
+
+"""Person Stats"""
+type PersonStore {
+  achievements: [PersonAchievement!]
+
+  """Store avatar @example steam"""
+  avatar: String
+
+  """Store banner @example banner-1"""
+  banner: String
+
+  """
+  Avatar uploaded by user @example https://avatars.akamai.steamstatic.com/custom_full.jpg
+  """
+  customAvatar: String
+  deliveryPromise: DeliveryPromise
+
+  """Person Store ID @example 1ee77cd5-ba25-6ffe-a772-0242ac120004"""
+  id: String
+
+  """Is achievements public @example true"""
+  isAchievementsPublic: Boolean!
+
+  """Are fav public @example false"""
+  isFavoritesPublic: Boolean!
+
+  """Is items on sale public @example true"""
+  isItemsOnSalePublic: Boolean!
+
+  """Is KYC verified @example true"""
+  isKycVerified: Boolean!
+
+  """Is store name public @example true"""
+  isStoreNamePublic: Boolean!
+
+  """Is top seller @example true"""
+  isTopSeller: Boolean!
+
+  """Is trade history public @example true"""
+  isTradeHistoryPublic: Boolean!
+
+  """Points left to the next level @example 42"""
+  leftPoints: Int
+
+  """Account level @example 42"""
+  level: Int
+
+  """Earned points @example 42"""
+  points: Int
+
+  """Registered at @example 2023-11-29T23:33:27+0000"""
+  registeredAt: DateTime!
+
+  """Store slug @example my-best-store"""
+  slug: String
+
+  """
+  Steam avatar @example https://avatars.akamai.steamstatic.com/111_full.jpg
+  """
+  steamAvatar: String
+
+  """Store name @example My Best Store"""
+  storeName: String!
+
+  """Years on market @example 3"""
+  years: Int
+}
+
+"""Person store settings"""
+input PersonStoreInput {
+  """Store avatar"""
+  avatar: AvatarType
+
+  """Store banner"""
+  banner: BannerType
+
+  """Custom avatar"""
+  customAvatar: FileUpload
+
+  """Custom avatar in base64"""
+  encodedCustomAvatar: String
+
+  """Is achievements public"""
+  isAchievementsPublic: Boolean
+
+  """Are favorites public"""
+  isFavoritesPublic: Boolean
+
+  """Is items on sale public"""
+  isItemsOnSalePublic: Boolean
+
+  """Is store name public"""
+  isStoreNamePublic: Boolean
+
+  """Is trade history public"""
+  isTradeHistoryPublic: Boolean
+
+  """Store name"""
+  storeName: String
+}
+
+"""
+How the current recommended price relates to the price the owner paid (purchase price)
+"""
+enum PriceIndicator {
+  """Recommended price equals the purchase price"""
+  EQUAL
+
+  """Recommended price is higher than the purchase price"""
+  HIGHER
+
+  """Recommended price is lower than the purchase price"""
+  LOWER
+}
+
+type Promo {
+  image: String
+  text: String!
+  url: String
+  video: String
+}
+
+"""Input with proxy"""
+input ProxyInput {
+  """Steam Proxy @example http://user:pass@1.2.3.4:8080"""
+  value: String!
+}
+
+"""Input with person's referrer code"""
+input ReferrerCodeInput {
+  """Referrer code @example 0a164726beafd9a1"""
+  value: String!
+}
+
+"""Input with person's email address"""
+input ReferrerInput {
+  """Person's referrer code"""
+  referrerCode: ReferrerCodeInput!
+
+  """Referrer tag string @example google"""
+  referrerTag: String
+}
+
+enum SortType {
+  ASC
+  DESC
+}
+
+"""Input with person's steam api key"""
+input SteamApiKeyInput {
+  """Steam api key @example EFA057EC4F63D90112C8D1C00311E01E"""
+  value: String!
+}
+
+enum SteamApp {
+  CSGO
+  DOTA2
+  TF2
+  UNKNOWN
+}
+
+interface SteamItemInterface {
+  """The ID of the app which owns the item @example 730"""
+  appId: String!
+
+  """The first half of the item cache identifier @example 5568220466"""
+  classId: String!
+
+  """The item's description. @example Some description"""
+  description: String
+
+  """
+  Normal icon @example https:\/\/steamcdn-a.akamaihd.net\/apps\/730\/icons\/econ\/default_generated\/weapon_ak47_cu_ak47_rubber_light_large.5836c38d3037a5a1f90ffdc8c9d0b94367ca8efd.png
+  """
+  icon(height: Int, width: Int): String
+
+  """
+  Large icon @example https:\/\/steamcdn-a.akamaihd.net\/apps\/730\/icons\/econ\/default_generated\/weapon_ak47_cu_ak47_rubber_light_large.5836c38d3037a5a1f90ffdc8c9d0b94367ca8efd.png
+  """
+  iconLarge(height: Int, width: Int): String
+
+  """The second half of the item cache identifier @example 188530139"""
+  instanceId: String!
+
+  """DEPRECATED"""
+  isMarketable: Boolean! @deprecated(reason: "Please do not use it")
+
+  """true if the item can be traded, false if not @example true"""
+  isTradeable: Boolean!
+
+  """
+  How many days for which the item will be untradable after being sold on the market. @example 7
+  """
+  marketTradeableRestriction: Int!
+
+  """The item's display name. @example Sealed Graffiti | Loser (SWAT Blue)"""
+  name: String!
+
+  """
+  The item's universal market name. This identifies the item's market listing page. @example Sealed Graffiti | Loser (SWAT Blue)
+  """
+  nameHash: String!
+
+  """Steam price"""
+  steamPrice: Money
+
+  """Updated at @example 2023-11-29T23:33:27+0000"""
+  updatedAt: DateTime!
+}
+
+"""Input with steam link"""
+input SteamLinkInput {
+  """
+  Steam Link @example https://steamcommunity.com/tradeoffer/new/?partner=272985700&token=EqWnBOIL
+  """
+  value: String!
+}
+
+type TradingCompetitionPersonItem {
+  """Position in top @example 3"""
+  position: Int
+
+  """Top of level @example 42"""
+  topLevel: Int
+}
+
+"""Represent UUID @example 1ee82f28-d8b1-6274-84f9-0242ac130007"""
+scalar Uuid
+
+"""Deposit"""
+type WalletDebt {
+  """Amount"""
+  amount: Money!
+
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Debt ID @example 1edee7b6-115c-6baa-a499-0242ac1d003d"""
+  id: String!
+
+  """Person"""
+  person: PersonPublic!
+}
+
+"""Deposit"""
+type WalletDeposit {
+  """
+  Airwallex payment intent secret @example bc1qnnxkvn2ht4n5uyqsjguq9d4cuqgghyuzychpju
+  """
+  airwallexSecret: String
+
+  """Amount"""
+  amount: Money!
+
+  """Comment @example Some comment"""
+  comment: String
+
+  """Complete at (SUCCESS status) @example 2023-11-29T23:33:27+0000"""
+  completedAt: DateTime
+
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Expired at @example 2023-11-29T23:33:27+0000"""
+  expiredAt: DateTime
+
+  """Deposit ID @example 1edee7b6-115c-6baa-a499-0242ac1d003d"""
+  id: String!
+
+  """Person"""
+  person: PersonPublic!
+
+  """Payment provider"""
+  provider: PaymentProvider!
+
+  """
+  Payment provider transaction id or wallet address @example bc1qnnxkvn2ht4n5uyqsjguq9d4cuqgghyuzychpju
+  """
+  providerCorrespondingId: String
+
+  """Url of provider payment page"""
+  providerPaymentPage: String
+
+  """Status"""
+  status: WalletDepositStatus!
+}
+
+enum WalletDepositStatus {
+  BLOCKED
+  EXPIRED
+  FAILED
+  NEW
+  PROCESSING
+  SUCCESS
+  UNCREDITED
+}
+
+enum WalletMethodEnum {
+  AIRWALLEX
+  BANK_CARD
+  C4S
+  DIFMARK
+  DRIFFLE
+  ENEBA
+  ESEA
+  G2A
+  GAMESEAL
+  INTERNAL
+  KINGUIN
+  LIKECARD
+  MERCURYO
+  NUVEI
+  OFFGAMERS
+  PAYOP
+  PAYPAL
+  PAYSERA
+  SEAGM
+  SEPA
+  SKINSBACK
+  SOLIDGATE
+  TIPALTI
+  WHITEBIT
+  WHITEBIT_CODE
+  WHITEPAY
+  ZEN
+}
+
+"""Transaction"""
+type WalletTransaction {
+  """Amount"""
+  amount: Money!
+
+  """
+  Transaction reason comment. Currently available for withdrawal @example Some comment
+  """
+  comment: String
+
+  """Person"""
+  counterparty: PersonPublic
+
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Fee"""
+  fee: Money
+
+  """Transaction ID @example 1ed4bd11-0a0e-658a-9e45-0242ac1d0004"""
+  id: String!
+
+  """Currency @example USD"""
+  initialCurrency: CryptoCurrency
+
+  """Is person seller or buyer for market deal"""
+  marketDealActionType: MarketDealActionType
+  method: WalletMethodEnum
+
+  """Crypto Currency Network"""
+  network: CryptoNetwork
+
+  """Person"""
+  person: PersonPublic!
+
+  """Reason @example MARKET_PRODUCT"""
+  reason: WalletTransactionReason!
+
+  """
+  Reason ID (deposit, withdraw, deal, etc...) @example 1ed4bd11-0a0e-658a-9e45-0242ac1d0004
+  """
+  reasonId: String!
+
+  """Status @example SUCCESS"""
+  status: WalletTransactionStatus!
+
+  """
+  Withdrawal destination address or wallet @example TMeDeibY2ovqARyVh3H9wGVHX7ixmujKcW
+  """
+  withdrawalAddress: String
+}
+
+"""Wallet transaction connection"""
+type WalletTransactionConnection {
+  """Edges of the connection"""
+  edges: [WalletTransactionConnectionEdge]
+
+  """Page info of the connection"""
+  pageInfo: PageInfo
+
+  """Total count of items in the connection."""
+  totalCount: Int
+}
+
+type WalletTransactionConnectionEdge {
+  """The edge cursor"""
+  cursor: String!
+
+  """Node of the Edge"""
+  node: WalletTransaction
+}
+
+enum WalletTransactionFeeType {
+  BONUS
+  DEPOSIT
+  INTERNAL
+  MARKET_PRODUCT
+  WITHDRAWAL
+}
+
+enum WalletTransactionReason {
+  BONUS
+  DEPOSIT
+  GIFT_CARD_PURCHASE
+  INTERNAL
+  MARKET_OFFER_HOLD
+  MARKET_PRODUCT
+  REVERSE_PENALTY
+  REVERSE_REFUND
+  TRANSFER
+  WITHDRAWAL
+  WRITE_OFF
+}
+
+"""Filters and sorts for wallet transactions list"""
+input WalletTransactionSearchInput {
+  createdAt: DateTimeRangeInput
+  currency: Currency
+  feeType: WalletTransactionFeeType
+
+  """Currency deposit"""
+  initialCurrencyDeposit: [Currency!]
+
+  """Currency withdrawal"""
+  initialCurrencyWithdrawal: [Currency!]
+
+  """Get only buy deals"""
+  isBuyer: Boolean
+
+  """Get only sell deals"""
+  isSeller: Boolean
+  reason: WalletTransactionReason
+
+  """Wallet transaction reasons"""
+  reasons: [WalletTransactionReason!]
+
+  """Sort"""
+  sort: WalletTransactionSortInput
+  status: WalletTransactionStatus
+
+  """Wallet method deposit"""
+  walletMethodsDeposit: [String!]
+
+  """Wallet method withdrawal"""
+  walletMethodsWithdrawal: [String!]
+}
+
+enum WalletTransactionSortField {
+  AMOUNT
+  CREATED_AT
+}
+
+"""Sort"""
+input WalletTransactionSortInput {
+  """Field for sort"""
+  field: WalletTransactionSortField!
+
+  """Type of sort"""
+  type: SortType!
+}
+
+enum WalletTransactionStatus {
+  CANCELED
+  HOLD_INCOME
+  HOLD_OUTCOME
+  SUCCESS
+  SUCCESS_HOLD
+}
+
+"""Transfer"""
+type WalletTransfer {
+  """Amount"""
+  amount: Money!
+
+  """Comment @example Some comment"""
+  comment: String
+
+  """Completed at (SUCCESS status) @example 2023-11-29T23:33:27+0000"""
+  completedAt: DateTime
+
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Person"""
+  from: PersonPublic!
+
+  """Transfer ID @example 1edee7b6-115c-6baa-a499-0242ac1d003d"""
+  id: String!
+
+  """Status"""
+  status: WalletTransferStatus!
+
+  """Person"""
+  to: PersonPublic!
+}
+
+"""Wallet transfer connection"""
+type WalletTransferConnection {
+  """Edges of the connection"""
+  edges: [WalletTransferConnectionEdge]
+
+  """Page info of the connection"""
+  pageInfo: PageInfo
+
+  """Total count of items in the connection."""
+  totalCount: Int
+}
+
+type WalletTransferConnectionEdge {
+  """The edge cursor"""
+  cursor: String!
+
+  """Node of the Edge"""
+  node: WalletTransfer
+}
+
+enum WalletTransferStatus {
+  CANCELLED
+  NEW
+  PROCESSING
+  SUCCESS
+}
+
+"""Withdrawal"""
+type WalletWithdrawal {
+  """Amount"""
+  amount: Money!
+
+  """Comment @example Some comment"""
+  comment: String
+
+  """Complete at (SUCCESS status) @example 2023-11-29T23:33:27+0000"""
+  completedAt: DateTime
+
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Expired at @example 2023-11-29T23:33:27+0000"""
+  expiredAt: DateTime
+
+  """Withdrawal ID @example 1edfdf7f-c98f-6904-972c-0242ac1d0005"""
+  id: String!
+
+  """Person"""
+  person: PersonPublic!
+
+  """Payment provider"""
+  provider: PaymentProvider!
+
+  """
+  Payment provider transaction id or wallet address @example TMeDeibY2ovqARyVh3H9wGVHX7ixmujKcW
+  """
+  providerCorrespondingId: String
+
+  """Status"""
+  status: WalletWithdrawalStatus!
+}
+
+enum WalletWithdrawalStatus {
+  EXPIRED
+  FAILED
+  NEW
+  PROCESSING
+  SUCCESS
+}

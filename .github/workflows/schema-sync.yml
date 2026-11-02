@@ -1,0 +1,190 @@
+name: Schema sync
+
+# SDK_SPEC 6.1: introspect the public partner schema, regenerate the generated layer, open or update a PR.
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [partner-schema-changed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: schema-sync
+  cancel-in-progress: false
+
+env:
+  COMPOSER_BIN: composer
+  PHP_COV: php
+
+jobs:
+  # Runs code generated from the server's schema (make codegen, make check), so it holds a read-only token only.
+  # The write token lives in open-pr, which applies the resulting patch as data and executes nothing from it.
+  generate:
+    name: Introspect, regenerate, check
+    # Guard for repository_dispatch. Schedule and workflow_dispatch are unaffected. A dispatch runs only when its
+    # event_type (github.event.action) is the expected one AND the sender login is in the JSON array held by the
+    # repository variable SCHEMA_SYNC_DISPATCH_SENDERS (for example ["schema-bot"]). Unset or empty means no
+    # sender is allowed (fail closed); invalid JSON fails the run. A missing sender never matches. open-pr needs
+    # this job, so it is skipped too.
+    if: >-
+      github.event_name != 'repository_dispatch'
+      || (github.event.action == 'partner-schema-changed'
+      && contains(fromJSON(vars.SCHEMA_SYNC_DISPATCH_SENDERS || '[]'), github.event.sender.login))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.fetch.outputs.changed }}
+      passed: ${{ steps.check.outputs.passed }}
+      breaking: ${{ steps.diff.outputs.breaking }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: tools/codegen/package-lock.json
+
+      - name: Install codegen tools
+        run: npm ci --prefix tools/codegen --no-audit --no-fund
+
+      - name: Introspect the partner schema
+        id: fetch
+        run: |
+          cp schema/partner.graphql "$RUNNER_TEMP/old.graphql"
+          node tools/codegen/fetch-schema.mjs
+          if git diff --quiet -- schema/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Schema unchanged, nothing to do."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Summarize changes into schema/CHANGES.md
+        id: diff
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          node tools/codegen/schema-diff.mjs "$RUNNER_TEMP/old.graphql" schema/partner.graphql \
+            --append schema/CHANGES.md | tee "$RUNNER_TEMP/summary.md"
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        if: steps.fetch.outputs.changed == 'true'
+        with:
+          php-version: '8.5'
+          coverage: pcov
+          tools: composer:2.11.0
+
+      - name: Regenerate and run make check
+        id: check
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          set +e
+          make install && make codegen && make check > "$RUNNER_TEMP/check.log" 2>&1
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then echo "passed=true" >> "$GITHUB_OUTPUT"; else echo "passed=false" >> "$GITHUB_OUTPUT"; fi
+          tail -n 40 "$RUNNER_TEMP/check.log" || true
+
+      - name: Write PR body
+        if: steps.fetch.outputs.changed == 'true'
+        env:
+          PASSED: ${{ steps.check.outputs.passed }}
+          BREAKING: ${{ steps.diff.outputs.breaking }}
+        run: |
+          {
+            echo "Automated sync of the public partner schema (\`https://api.white.market/graphql/partner\`)."
+            echo
+            if [ "$PASSED" != "true" ]; then
+              echo "> **make check failed.** This PR is a draft so a human sees the schema change. Last lines:"
+              echo
+              echo '```'
+              tail -n 30 "$RUNNER_TEMP/check.log" 2>/dev/null || echo "(no log)"
+              echo '```'
+              echo
+            fi
+            echo "Breaking changes: \`$BREAKING\`"
+            echo
+            cat "$RUNNER_TEMP/summary.md"
+            echo
+            echo "### Regenerated files"
+            echo
+            git status --porcelain | sed 's/^/- /'
+            echo
+            echo "### Reviewer checklist"
+            echo
+            echo "- [ ] Does the high-level layer need changes (models, mappers, methods, README)? Use the \`schema-update\` skill."
+            echo "- [ ] SemVer bump decided and recorded in CHANGELOG.md."
+            echo "- [ ] Sister SDKs notified if the operation CHECKSUMS changed."
+          } > "$RUNNER_TEMP/pr-body.md"
+
+      - name: Package the regenerated files as a patch
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/schema-sync"
+          git add -A -- schema graphql src/Generated
+          git diff --cached --binary > "$RUNNER_TEMP/schema-sync/changes.patch"
+          cp "$RUNNER_TEMP/pr-body.md" "$RUNNER_TEMP/schema-sync/pr-body.md"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.fetch.outputs.changed == 'true'
+        with:
+          name: schema-sync
+          path: ${{ runner.temp }}/schema-sync/
+          if-no-files-found: error
+          retention-days: 1
+
+  open-pr:
+    name: Open PR
+    needs: generate
+    if: needs.generate.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: schema-sync
+          path: ${{ runner.temp }}/schema-sync
+
+      # The patch is data: git apply writes files, nothing from it runs. Any path outside the generated areas fails the job.
+      - name: Apply the patch
+        run: |
+          git apply --binary "$RUNNER_TEMP/schema-sync/changes.patch"
+          unexpected=$(git status --porcelain --untracked-files=all | cut -c4- | grep -vE '^(schema|graphql|src/Generated)/' || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::the patch touches paths outside schema/, graphql/, src/Generated/"
+            echo "$unexpected"
+            exit 1
+          fi
+
+      # PRs opened with the default GITHUB_TOKEN do not trigger the CI workflow (peter-evans/create-pull-request
+      # docs, "Triggering further workflow runs"). SCHEMA_SYNC_TOKEN (GitHub App or fine-grained PAT with
+      # contents + pull-requests write on this repository) makes CI run on the PR; without it, CI must be re-run by hand.
+      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.SCHEMA_SYNC_TOKEN || github.token }}
+          branch: schema-sync/auto
+          base: main
+          delete-branch: true
+          commit-message: 'chore(schema): sync partner schema'
+          title: 'chore(schema): sync partner schema'
+          body-path: ${{ runner.temp }}/schema-sync/pr-body.md
+          labels: ${{ needs.generate.outputs.breaking == 'true' && 'schema-update,breaking' || 'schema-update' }}
+          draft: ${{ needs.generate.outputs.passed == 'true' && 'false' || 'always-true' }}
+          add-paths: |
+            schema/**
+            graphql/**
+            src/Generated/**

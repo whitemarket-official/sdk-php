@@ -1,0 +1,27 @@
+{
+  "$schema": "tools/infection/vendor/infection/infection/resources/schema.json",
+  "source": {
+    "directories": ["src"],
+    "excludes": ["Generated"]
+  },
+  "tmpDir": "var/cache/infection",
+  "logs": {
+    "text": "var/qc/infection.txt",
+    "summary": "var/qc/infection-summary.txt"
+  },
+  "phpUnit": {
+    "configDir": "."
+  },
+  "testFramework": "phpunit",
+  "testFrameworkOptions": "--testsuite=unit",
+  "threads": "max",
+  // Infection skips a mutant whose covering tests take at least this long (MutationTestingRunner::takingTooLong).
+  // The default 10 s skipped every mutant of src/Export/Rows: JsonRowSourcesTest alone runs ~3 s without coverage.
+  "timeout": 60,
+  "mutators": {
+    "@default": true
+  },
+  // Raised as the hand-written code grows; never lowered without an issue reference.
+  "minMsi": 80,
+  "minCoveredMsi": 90
+}

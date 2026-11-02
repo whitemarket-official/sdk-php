@@ -1,0 +1,138 @@
+# Hand-written override (SDK_SPEC 1.2): the generated selection estimates complexity 306 > 300.
+# Dropped: the back-references deal.item and product.item (the node itself is the inventory item).
+query InventoryMy($forwardPagination: ForwardPaginationInput = null, $search: PersonInventorySearchInput = null) {
+  inventory_my(forwardPagination: $forwardPagination, search: $search) {
+    edges {
+      cursor
+      node {
+        __typename
+        ... on CSGOInventoryItem {
+          ...CSGOInventoryItemFields
+          charmGradient {
+            ...CSGOCharmGradientFields
+            points {
+              color
+              name
+            }
+          }
+          charms {
+            ...CSGOCharmFields
+            gradient {
+              ...CSGOCharmGradientFields
+            }
+            minPrice {
+              ...MoneyFields
+            }
+          }
+          deal {
+            ...MarketDealFields
+            buyer {
+              ...PersonPublicFields
+            }
+            price {
+              ...MoneyFields
+            }
+            product {
+              ...MarketProductHistoryFields
+              params {
+                __typename
+                id
+              }
+              store {
+                id
+              }
+            }
+            receiver {
+              ...PersonSteamFields
+            }
+            seller {
+              ...PersonPublicFields
+            }
+            totalPrice {
+              ...MoneyFields
+            }
+          }
+          description {
+            __typename
+            ... on CSGOSteamItem {
+              ...CSGOSteamItemFields
+              charmMinPrice {
+                ...MoneyFields
+              }
+              collection {
+                ...LocalizedValueFields
+              }
+              containItems {
+                ...CSGOSteamContainItemFields
+              }
+              containRareItems {
+                ...CSGOSteamContainItemFields
+              }
+              exterior {
+                ...LocalizedValueFields
+              }
+              rarity {
+                ...LocalizedValueFields
+              }
+              steamPrice {
+                ...MoneyFields
+              }
+            }
+          }
+          instantSellPrice {
+            ...MoneyFields
+          }
+          maxPriceForSell {
+            ...MoneyFields
+          }
+          minPrice {
+            ...MoneyFields
+          }
+          order {
+            __typename
+          }
+          product {
+            ...MarketProductFields
+            discountPrice {
+              ...MoneyFields
+            }
+            offerMinPrice {
+              ...MoneyFields
+            }
+            position {
+              ...IntegerRangeFields
+            }
+            price {
+              ...MoneyFields
+            }
+            promo {
+              ...PromoFields
+            }
+            store {
+              ...PersonStoreFields
+            }
+          }
+          purchasePrice {
+            ...MoneyFields
+          }
+          recommendedPrice {
+            ...MoneyFields
+          }
+          stickers {
+            ...CSGOStickerFields
+            minPrice {
+              ...MoneyFields
+            }
+          }
+        }
+      }
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+      hasPreviousPage
+      startCursor
+    }
+    totalCount
+  }
+}

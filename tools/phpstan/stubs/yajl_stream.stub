@@ -1,0 +1,32 @@
+<?php
+
+// The part of ext-yajl_stream the SDK calls (ADR 0006); the extension is optional, so PHPStan reads this stub.
+// Source: https://github.com/vlydev/php-yajl-stream v0.1.0 (yajl_stream.c, README).
+
+namespace YajlStream;
+
+class ParseException extends \Exception {}
+
+/**
+ * @implements \IteratorAggregate<int, mixed>
+ */
+final class ArrayParser implements \IteratorAggregate
+{
+    public const MAX_BUFFER_SIZE = 67108864;
+
+    /**
+     * @throws ParseException the path cannot be opened
+     * @throws \ValueError $bufferSize out of range
+     */
+    public function __construct(string $filePath, string $pointer = '', int $bufferSize = 65536) {}
+
+    /**
+     * @throws ParseException
+     */
+    public function fetch(): mixed {}
+
+    /**
+     * @return \Iterator<int, mixed>
+     */
+    public function getIterator(): \Iterator {}
+}

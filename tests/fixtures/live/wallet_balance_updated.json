@@ -1,0 +1,7 @@
+{
+  "type": "wallet_balance_updated",
+  "content": {
+    "balance": "10.00",
+    "currency": "USD"
+  }
+}

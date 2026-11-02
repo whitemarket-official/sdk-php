@@ -1,0 +1,22 @@
+# gitleaks configuration: default rules plus the paths that never contain real secrets.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Dependencies, caches and local output are not part of the repository"
+paths = [
+  '''(^|/)vendor/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)var/''',
+  '''(^|/)\.idea/''',
+  '''(^|/)\.git/''',
+  # Local env files hold the developer's real token: git-ignored, never committed, so a scan of them only risks
+  # printing it (owner decision 2026-10-31). The committed `.env.example` is still scanned (RE2 has no lookahead,
+  # hence the explicit names).
+  '''(^|/)\.env$''',
+  '''(^|/)\.env\.(local|dev|development|prod|production|test|testing|staging)(\.local)?$''',
+]
+# Test fixtures name their fake credentials `synthetic-...` (CLAUDE.md data policy).
+regexes = [
+  '''^synthetic-[a-z0-9-]+$''',
+]

@@ -1,0 +1,89 @@
+# Hand-written override (SDK_SPEC 1.2): the server fails every archived product's `params.updatedAt` with
+# "Internal error occurred" (no category), so the whole query errored [observed 2026-11-01, live smoke].
+# With it gone, `params.order { id }` makes the server answer HTTP 500 [observed 2026-11-01, field-by-field].
+# Dropped: `updatedAt` and `order` of `params` (the CSGOInventoryItemFields leaves are inlined without updatedAt).
+# See DEVIATIONS.
+query DealHistory($forwardPagination: ForwardPaginationInput = null, $search: MarkerDealHistorySearchInput = null) {
+  deal_history(forwardPagination: $forwardPagination, search: $search) {
+    edges {
+      cursor
+      node {
+        ...MarketDealHistoryFields
+        buyer {
+          ...PersonPublicFields
+        }
+        price {
+          ...MoneyFields
+        }
+        priceNet {
+          ...MoneyFields
+        }
+        product {
+          ...MarketProductHistoryFields
+          description {
+            __typename
+            ... on CSGOSteamItem {
+              ...CSGOSteamItemFields
+            }
+          }
+          params {
+            __typename
+            ... on CSGOInventoryItem {
+              amount
+              appId
+              assetId
+              canInstantSell
+              classId
+              contextId
+              exteriorEnum
+              fade
+              fadeRank
+              float
+              id
+              instanceId
+              isAdditionalDataMissed
+              isStickersDataMissed
+              link
+              nameHash
+              paintIndex
+              paintSeed
+              phase
+              phaseEnum
+              purchasePriceIndicator
+              sellerSteamId
+              similarQty
+              deal {
+                id
+              }
+              product {
+                id
+              }
+            }
+          }
+          price {
+            ...MoneyFields
+          }
+          store {
+            ...PersonStoreFields
+          }
+        }
+        reversePenaltyValue {
+          ...MoneyFields
+        }
+        reverseRefundValue {
+          ...MoneyFields
+        }
+        seller {
+          ...PersonPublicFields
+        }
+      }
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+      hasPreviousPage
+      startCursor
+    }
+    totalCount
+  }
+}

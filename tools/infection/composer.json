@@ -1,0 +1,15 @@
+{
+  "name": "whitemarket/sdk-tools-infection",
+  "description": "Isolated install of Infection: it requires PHP ^8.3, the SDK supports ^8.2, so it cannot live in the root require-dev.",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "infection/infection": "^0.35.8"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "infection/extension-installer": false
+    }
+  }
+}

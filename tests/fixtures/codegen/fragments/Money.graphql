@@ -1,0 +1,4 @@
+fragment MoneyFields on Money {
+  currency
+  value
+}

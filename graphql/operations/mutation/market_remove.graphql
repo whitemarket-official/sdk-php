@@ -1,0 +1,129 @@
+# Hand-written override (SDK_SPEC 1.2): the server fails `updatedAt` of a deal's product item (`MarketProductHistory.params`)
+# with "Internal error occurred" and `params.order { id }` with HTTP 500, and rolls a mutation back when it does:
+# `market_buy` created no deal [observed 2026-11-02, twice]. Dropped there: `updatedAt` (the CSGOInventoryItemFields
+# leaves are inlined without it) and `order`. Pinned by tests/unit/Generated/ProductHistoryParamsSelectionTest.php.
+mutation MarketRemove($marketProductId: String!) {
+  market_remove(marketProductId: $marketProductId) {
+    ...MarketProductHistoryFields
+    description {
+      __typename
+      ... on CSGOSteamItem {
+        ...CSGOSteamItemFields
+        charmMinPrice {
+          ...MoneyFields
+        }
+        collection {
+          ...LocalizedValueFields
+        }
+        containItems {
+          ...CSGOSteamContainItemFields
+        }
+        containRareItems {
+          ...CSGOSteamContainItemFields
+        }
+        exterior {
+          ...LocalizedValueFields
+        }
+        rarity {
+          ...LocalizedValueFields
+        }
+        steamPrice {
+          ...MoneyFields
+        }
+      }
+    }
+    params {
+      __typename
+      ... on CSGOInventoryItem {
+        amount
+        appId
+        assetId
+        canInstantSell
+        classId
+        contextId
+        exteriorEnum
+        fade
+        fadeRank
+        float
+        id
+        instanceId
+        isAdditionalDataMissed
+        isStickersDataMissed
+        link
+        nameHash
+        paintIndex
+        paintSeed
+        phase
+        phaseEnum
+        purchasePriceIndicator
+        sellerSteamId
+        similarQty
+        charmGradient {
+          ...CSGOCharmGradientFields
+        }
+        charms {
+          ...CSGOCharmFields
+        }
+        deal {
+          ...MarketDealFields
+          buyer {
+            id
+          }
+          item {
+            __typename
+            id
+          }
+          product {
+            id
+          }
+          seller {
+            id
+          }
+        }
+        description {
+          __typename
+          ... on CSGOSteamItem {
+            ...CSGOSteamItemFields
+          }
+        }
+        instantSellPrice {
+          ...MoneyFields
+        }
+        maxPriceForSell {
+          ...MoneyFields
+        }
+        minPrice {
+          ...MoneyFields
+        }
+        product {
+          ...MarketProductFields
+          item {
+            __typename
+            id
+          }
+          store {
+            id
+          }
+        }
+        purchasePrice {
+          ...MoneyFields
+        }
+        recommendedPrice {
+          ...MoneyFields
+        }
+        stickers {
+          ...CSGOStickerFields
+        }
+      }
+    }
+    price {
+      ...MoneyFields
+    }
+    store {
+      ...PersonStoreFields
+      achievements {
+        ...PersonAchievementFields
+      }
+    }
+  }
+}

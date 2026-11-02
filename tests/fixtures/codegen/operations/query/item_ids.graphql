@@ -1,0 +1,5 @@
+query ItemIds {
+  items {
+    id
+  }
+}
