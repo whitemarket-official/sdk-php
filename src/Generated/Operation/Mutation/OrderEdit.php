@@ -19,7 +19,48 @@ final class OrderEdit
         mutation OrderEdit($id: Uuid!, $link: SteamLinkInput, $price: MoneyInput!, $quantity: Int!) {
           order_edit(id: $id, link: $link, price: $price, quantity: $quantity) {
             __typename
+            ... on CSGOMarketOrder {
+              ...CSGOMarketOrderFields
+              params {
+                ...MarketOrderParamValueFields
+              }
+              price {
+                ...MoneyFields
+              }
+            }
           }
+        }
+
+        fragment CSGOMarketOrderFields on CSGOMarketOrder {
+          app
+          comment
+          createdAt
+          expiredAt
+          exterior
+          icon
+          iconLarge
+          id
+          link
+          nameHash
+          phase
+          quantity
+          quantityFailed
+          quantityProgress
+          quantitySuccess
+          rarity
+          short
+          skin
+          status
+        }
+
+        fragment MarketOrderParamValueFields on MarketOrderParamValue {
+          param
+          value
+        }
+
+        fragment MoneyFields on Money {
+          currency
+          value
         }
         GRAPHQL;
 
@@ -39,8 +80,8 @@ final class OrderEdit
     /**
      * @param array<mixed> $data
      */
-    public static function decode(#[\SensitiveParameter] array $data): \WhiteMarket\Sdk\GraphQL\UnknownTypeValue
+    public static function decode(#[\SensitiveParameter] array $data): \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderEdit\Result|\WhiteMarket\Sdk\GraphQL\UnknownTypeValue
     {
-        return \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'order_edit', '', \WhiteMarket\Sdk\GraphQL\Decode::unknownType(...));
+        return \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'order_edit', '', \WhiteMarket\Sdk\GraphQL\Decode::abstractOf(['CSGOMarketOrder' => \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderEdit\ResultCSGOMarketOrder::fromValue(...)]));
     }
 }

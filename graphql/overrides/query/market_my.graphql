@@ -1,0 +1,106 @@
+# Hand-written override (schema-update, PR #2): keeps `item.order` at `__typename` as on main. Schema sync 2026-11-02
+# added CSGOMarketOrderPublic, which grew the selection to `order { ...CSGOMarketOrderPublicFields inventory { id } }`;
+# the high-level layer does not read it and the server has failed `order` selections before (see market_buy override).
+query MarketMy($forwardPagination: ForwardPaginationInput = null, $search: MarketProductSearchInput = null) {
+  market_my(forwardPagination: $forwardPagination, search: $search) {
+    edges {
+      cursor
+      node {
+        ...MarketProductFields
+        discountPrice {
+          ...MoneyFields
+        }
+        item {
+          __typename
+          ... on CSGOInventoryItem {
+            ...CSGOInventoryItemFields
+            charmGradient {
+              ...CSGOCharmGradientFields
+            }
+            charms {
+              ...CSGOCharmFields
+            }
+            deal {
+              ...MarketDealFields
+              buyer {
+                id
+              }
+              item {
+                __typename
+                id
+              }
+              product {
+                id
+              }
+              seller {
+                id
+              }
+            }
+            description {
+              __typename
+              ... on CSGOSteamItem {
+                ...CSGOSteamItemFields
+              }
+            }
+            instantSellPrice {
+              ...MoneyFields
+            }
+            maxPriceForSell {
+              ...MoneyFields
+            }
+            minPrice {
+              ...MoneyFields
+            }
+            order {
+              __typename
+            }
+            product {
+              ...MarketProductFields
+              item {
+                __typename
+                id
+              }
+              store {
+                id
+              }
+            }
+            purchasePrice {
+              ...MoneyFields
+            }
+            recommendedPrice {
+              ...MoneyFields
+            }
+            stickers {
+              ...CSGOStickerFields
+            }
+          }
+        }
+        offerMinPrice {
+          ...MoneyFields
+        }
+        position {
+          ...IntegerRangeFields
+        }
+        price {
+          ...MoneyFields
+        }
+        promo {
+          ...PromoFields
+        }
+        store {
+          ...PersonStoreFields
+          achievements {
+            ...PersonAchievementFields
+          }
+        }
+      }
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+      hasPreviousPage
+      startCursor
+    }
+    totalCount
+  }
+}

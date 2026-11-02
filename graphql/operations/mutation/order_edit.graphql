@@ -2,5 +2,14 @@
 mutation OrderEdit($id: Uuid!, $link: SteamLinkInput, $price: MoneyInput!, $quantity: Int!) {
   order_edit(id: $id, link: $link, price: $price, quantity: $quantity) {
     __typename
+    ... on CSGOMarketOrder {
+      ...CSGOMarketOrderFields
+      params {
+        ...MarketOrderParamValueFields
+      }
+      price {
+        ...MoneyFields
+      }
+    }
   }
 }

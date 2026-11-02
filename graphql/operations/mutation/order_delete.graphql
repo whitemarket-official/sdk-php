@@ -2,5 +2,14 @@
 mutation OrderDelete($ids: [Uuid!]!) {
   order_delete(ids: $ids) {
     __typename
+    ... on CSGOMarketOrder {
+      ...CSGOMarketOrderFields
+      params {
+        ...MarketOrderParamValueFields
+      }
+      price {
+        ...MoneyFields
+      }
+    }
   }
 }

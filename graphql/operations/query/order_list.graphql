@@ -5,6 +5,87 @@ query OrderList($forwardPagination: ForwardPaginationInput = null, $search: Mark
       cursor
       node {
         __typename
+        ... on CSGOMarketOrderPublic {
+          ...CSGOMarketOrderPublicFields
+          inventory {
+            __typename
+            ... on CSGOInventoryItem {
+              ...CSGOInventoryItemFields
+              charmGradient {
+                ...CSGOCharmGradientFields
+              }
+              charms {
+                ...CSGOCharmFields
+              }
+              deal {
+                ...MarketDealFields
+                buyer {
+                  id
+                }
+                item {
+                  __typename
+                  id
+                }
+                product {
+                  id
+                }
+                seller {
+                  id
+                }
+              }
+              description {
+                __typename
+                ... on CSGOSteamItem {
+                  ...CSGOSteamItemFields
+                }
+              }
+              instantSellPrice {
+                ...MoneyFields
+              }
+              maxPriceForSell {
+                ...MoneyFields
+              }
+              minPrice {
+                ...MoneyFields
+              }
+              order {
+                __typename
+                ... on CSGOMarketOrderPublic {
+                  ...CSGOMarketOrderPublicFields
+                  inventory {
+                    __typename
+                    id
+                  }
+                }
+              }
+              product {
+                ...MarketProductFields
+                item {
+                  __typename
+                  id
+                }
+                store {
+                  id
+                }
+              }
+              purchasePrice {
+                ...MoneyFields
+              }
+              recommendedPrice {
+                ...MoneyFields
+              }
+              stickers {
+                ...CSGOStickerFields
+              }
+            }
+          }
+          params {
+            ...MarketOrderParamValueFields
+          }
+          price {
+            ...MoneyFields
+          }
+        }
       }
     }
     pageInfo {

@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Schema sync 2026-11-02 (generated layer only): the schema now exposes `CSGOMarketOrder` / `CSGOMarketOrderPublic`.
+  The generated `order*` operations select their fields, and `orderActivate/Deactivate/Delete/Edit/New` and
+  `orderList/My*` return the new order classes instead of a bare `UnknownTypeValue` (the union keeps it for unknown
+  types). `market_list`, `market_item`, `market_my`, `market_new` and `market_edit` keep `item.order { __typename }`
+  through overrides (DEVIATIONS); the high-level API is unchanged.
 - Live (SDK_SPEC 3.11, owner decision 2026-11-01): a close/disconnect code outside 3000-3499, 3500-3999, 4000-4499 and
   4500-4999 (WebSocket 1000, 1001, 1006, ...) now reconnects with the backoff instead of ending the session, at most 5
   consecutive times; the 6th throws `LiveConnectionException` (code + reason). The count resets after a connection

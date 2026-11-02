@@ -19,7 +19,48 @@ final class OrderActivate
         mutation OrderActivate($ids: [Uuid!]!) {
           order_activate(ids: $ids) {
             __typename
+            ... on CSGOMarketOrder {
+              ...CSGOMarketOrderFields
+              params {
+                ...MarketOrderParamValueFields
+              }
+              price {
+                ...MoneyFields
+              }
+            }
           }
+        }
+
+        fragment CSGOMarketOrderFields on CSGOMarketOrder {
+          app
+          comment
+          createdAt
+          expiredAt
+          exterior
+          icon
+          iconLarge
+          id
+          link
+          nameHash
+          phase
+          quantity
+          quantityFailed
+          quantityProgress
+          quantitySuccess
+          rarity
+          short
+          skin
+          status
+        }
+
+        fragment MarketOrderParamValueFields on MarketOrderParamValue {
+          param
+          value
+        }
+
+        fragment MoneyFields on Money {
+          currency
+          value
         }
         GRAPHQL;
 
@@ -37,10 +78,10 @@ final class OrderActivate
 
     /**
      * @param array<mixed> $data
-     * @return list<\WhiteMarket\Sdk\GraphQL\UnknownTypeValue>
+     * @return list<\WhiteMarket\Sdk\Generated\Operation\Mutation\OrderActivate\Result|\WhiteMarket\Sdk\GraphQL\UnknownTypeValue>
      */
     public static function decode(#[\SensitiveParameter] array $data): array
     {
-        return \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'order_activate', '', \WhiteMarket\Sdk\GraphQL\Decode::listOf(\WhiteMarket\Sdk\GraphQL\Decode::unknownType(...)));
+        return \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'order_activate', '', \WhiteMarket\Sdk\GraphQL\Decode::listOf(\WhiteMarket\Sdk\GraphQL\Decode::abstractOf(['CSGOMarketOrder' => \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderActivate\ResultCSGOMarketOrder::fromValue(...)])));
     }
 }

@@ -280,6 +280,111 @@ type CSGOInventoryItem implements InventoryItemInterface {
   updatedAt: DateTime!
 }
 
+type CSGOMarketOrder implements MarketOrder {
+  """The ID of the app which owns the item @example 730"""
+  app: SteamApp!
+
+  """Comment to order"""
+  comment: String
+
+  """Created at @example 2023-11-29T23:33:27+0000"""
+  createdAt: DateTime!
+
+  """Expired at @example 2023-11-29T23:33:27+0000"""
+  expiredAt: DateTime
+  exterior: CSGOExterior
+
+  """
+  Normal icon @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  icon(height: Int, width: Int): String
+
+  """
+  Large icon @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  iconLarge(height: Int, width: Int): String
+
+  """Order ID @example 1ee4bd8c-e669-695e-9ba4-0242ac1d0008"""
+  id: String!
+
+  """
+  External trade URL for delivery @example https://steamcommunity.com/tradeoffer/new/?partner=272985700&token=EqWnBOIL
+  """
+  link: String
+
+  """Hash name @example Sealed Graffiti | Loser (SWAT Blue)"""
+  nameHash: String!
+
+  """Price"""
+  params: [MarketOrderParamValue!]!
+  phase: CSGOPhase
+
+  """Price"""
+  price: Money!
+
+  """Quantity of products @example 10"""
+  quantity: Int!
+
+  """Quantity of failed deals @example 10"""
+  quantityFailed: Int!
+
+  """Quantity of in progress deals @example 10"""
+  quantityProgress: Int!
+
+  """Quantity of success deals @example 10"""
+  quantitySuccess: Int!
+  rarity: CSGORarity
+  short: String
+  skin: String
+
+  """Status @example ACTIVE"""
+  status: MarketOrderStatus!
+}
+
+type CSGOMarketOrderPublic implements MarketOrderPublic {
+  """The ID of the app which owns the item @example 730"""
+  app: SteamApp!
+  category: CSGOCategory
+  exterior: CSGOExterior
+
+  """
+  Normal icon @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  icon(height: Int, width: Int): String
+
+  """
+  Large icon @example https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/paris2023/sig_floppy_large.a2063e888511d11f9ef153ddb3b705bf3f8acdfe.png
+  """
+  iconLarge(height: Int, width: Int): String
+
+  """Order ID @example 1ee4bd8c-e669-695e-9ba4-0242ac1d0008"""
+  id: String!
+
+  """Item info"""
+  inventory: InventoryItemInterface
+
+  """Is your order or not @example true"""
+  isMy: Boolean!
+  isSouvenir: Boolean
+  isStatTrak: Boolean
+
+  """Hash name @example Sealed Graffiti | Loser (SWAT Blue)"""
+  nameHash: String!
+
+  """Price"""
+  params: [MarketOrderParamValue!]!
+
+  """Price"""
+  price: Money!
+
+  """Quantity of products @example 42"""
+  quantity: Int!
+  rarity: CSGORarity
+  short: String
+  skin: String
+  subcategory: CSGOSubcategory
+}
+
 enum CSGOPhase {
   BLACK_PEARL
   EMERALD

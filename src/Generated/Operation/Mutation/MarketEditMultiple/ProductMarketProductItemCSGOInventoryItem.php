@@ -37,7 +37,7 @@ final class ProductMarketProductItemCSGOInventoryItem implements \WhiteMarket\Sd
         public readonly ?int $similarQty,
         public readonly \DateTimeImmutable $updatedAt,
         public readonly ?\WhiteMarket\Sdk\Generated\Operation\Mutation\MarketEditMultiple\ProductMarketProductItemCSGOInventoryItemDeal $deal,
-        public readonly ?\WhiteMarket\Sdk\GraphQL\UnknownTypeValue $order,
+        public readonly \WhiteMarket\Sdk\Generated\Operation\Mutation\MarketEditMultiple\ProductMarketProductItemCSGOInventoryItemOrder|\WhiteMarket\Sdk\GraphQL\UnknownTypeValue|null $order,
         public readonly ?\WhiteMarket\Sdk\Generated\Operation\Mutation\MarketEditMultiple\ProductMarketProductItemCSGOInventoryItemProduct $product,
     ) {}
 
@@ -71,7 +71,7 @@ final class ProductMarketProductItemCSGOInventoryItem implements \WhiteMarket\Sd
             similarQty: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'similarQty', $path, \WhiteMarket\Sdk\GraphQL\Decode::nullableOf(\WhiteMarket\Sdk\GraphQL\Decode::int(...))),
             updatedAt: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'updatedAt', $path, \WhiteMarket\Sdk\GraphQL\Decode::dateTime(...)),
             deal: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'deal', $path, \WhiteMarket\Sdk\GraphQL\Decode::nullableOf(\WhiteMarket\Sdk\Generated\Operation\Mutation\MarketEditMultiple\ProductMarketProductItemCSGOInventoryItemDeal::fromValue(...))),
-            order: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'order', $path, \WhiteMarket\Sdk\GraphQL\Decode::nullableOf(\WhiteMarket\Sdk\GraphQL\Decode::unknownType(...))),
+            order: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'order', $path, \WhiteMarket\Sdk\GraphQL\Decode::nullableOf(\WhiteMarket\Sdk\GraphQL\Decode::abstractOf(['CSGOMarketOrderPublic' => \WhiteMarket\Sdk\Generated\Operation\Mutation\MarketEditMultiple\ProductMarketProductItemCSGOInventoryItemOrderCSGOMarketOrderPublic::fromValue(...)]))),
             product: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'product', $path, \WhiteMarket\Sdk\GraphQL\Decode::nullableOf(\WhiteMarket\Sdk\Generated\Operation\Mutation\MarketEditMultiple\ProductMarketProductItemCSGOInventoryItemProduct::fromValue(...))),
         );
     }
