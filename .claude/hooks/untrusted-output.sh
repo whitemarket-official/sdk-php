@@ -33,7 +33,9 @@ set -u
 input="$(cat 2>/dev/null || true)"
 [ -z "$input" ] && exit 0
 
-tmp="$(mktemp -t claude-untrusted 2>/dev/null)" || exit 0
+# An explicit XXXXXX template: GNU mktemp rejects `-t name` without X's ("too few X's in template"), which made
+# the hook exit silently on Linux (CI) while it worked on macOS.
+tmp="$(mktemp "${TMPDIR:-/tmp}/claude-untrusted.XXXXXX" 2>/dev/null)" || exit 0
 printf '%s' "$input" >"$tmp"
 
 python3 - "$tmp" <<'PY' 2>/dev/null
