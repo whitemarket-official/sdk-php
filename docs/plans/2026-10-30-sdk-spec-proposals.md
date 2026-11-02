@@ -484,7 +484,8 @@ Status: merged into SDK_SPEC 3.11 (2026-11-01, owner).
 Status: decided B (owner, 2026-11-02), implemented in PHP and merged into SDK_SPEC 1.2 (session 23): the shared
 `tools/codegen/generate-operations.mjs` selects `__typename id` for an interface field at the depth limit, which changes
 the generated documents and CHECKSUMS; every sister SDK copies the same `.mjs` and regenerates. The PHP language codegen
-keeps rule A as a fallback for hand-written overrides that select an interface without `__typename`.
+keeps rule A as a fallback for hand-written overrides that select an interface without `__typename` (owner decision,
+2026-11-02: keep it).
 
 - Fact: at the depth limit the operation generator selects an interface field as `{ id }` (rule "at the limit, select
   only `id`"), without `__typename` and without inline fragments (e.g. `market_list` ...
@@ -500,7 +501,7 @@ keeps rule A as a fallback for hand-written overrides that select an interface w
 
 ## P23. Section 3.4 deals: `waitFor` for seller deals
 
-Status: implemented in PHP (owner bug report, 2026-11-02); awaits merge into SDK_SPEC.
+Status: implemented in PHP (owner bug report, 2026-11-02); merged into SDK_SPEC 3.4 rule 12 (owner, 2026-11-02).
 
 - Fact [observed 2026-11-02]: `deal_buyer_statuses([id])` returns no row for a deal where the caller is the seller
   (a SEMI sale), while `deal_item(id)` returns it. A `waitFor` that only polls `deal_buyer_statuses` never sees a
@@ -512,7 +513,8 @@ Status: implemented in PHP (owner bug report, 2026-11-02); awaits merge into SDK
 
 ## P24. Section 3.3 buying: a price cap on every buy form
 
-Status: implemented in PHP (owner decision, 2026-11-02); awaits merge into SDK_SPEC. The server honours the cap with `id`
+Status: implemented in PHP (owner decision, 2026-11-02); merged into SDK_SPEC 3.3 (method table, rule 7; owner,
+2026-11-02). The server honours the cap with `id`
 [observed 2026-11-02: refused with `market.product.not_found_in_specified_price`, no deal]; `appIdAssetIdInput` not tried.
 
 - Before: only `buyCheapest(app, nameHash, maxPrice?, ...)` takes a maximum price.
