@@ -109,7 +109,11 @@ coverage: $(if $(findstring docker,$(PHP_COV)),docker-image) ## Unit tests with 
 		&& $(PHP) tools/coverage-check.php var/qc/clover.xml $(COVERAGE_MIN)'
 
 .PHONY: infection
-INFECTION := tools/infection/vendor/bin/infection --no-progress --no-interaction --show-mutations=20
+# INFECTION_ARGS: extra options, e.g. the changed-lines run of a pull request in CI
+# (`--git-diff-lines --git-diff-base=origin/main --ignore-msi-with-no-mutations`). It needs the git history, so it
+# works with the host PHP (`PHP_COV=php`), not with the Docker run below, which copies the tree without `.git`.
+INFECTION_ARGS ?=
+INFECTION := tools/infection/vendor/bin/infection --no-progress --no-interaction --show-mutations=20 $(INFECTION_ARGS)
 # Under Docker Desktop for macOS, Infection's parallel processes exhaust open files on the bind mount ("Too many open
 # files", 2 of 2 runs through the mount, 0 of 3 on a container-local copy), so the Docker run works on a copy of the
 # tree and copies the reports back. The exit code is Infection's. The image has no php.ini, so the CLI default 128M

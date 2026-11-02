@@ -82,6 +82,7 @@ final class SseConnectionSocketTest extends TestCase
     {
         $connection = $this->connect('delayed', $slices);
         $this->open($connection);
+        $this->server?->release();
 
         $start = microtime(true);
         $event = $connection->read(10);
@@ -98,6 +99,7 @@ final class SseConnectionSocketTest extends TestCase
     {
         $connection = $this->connect('delayed');
         $this->open($connection);
+        $this->server?->release();
 
         $start = microtime(true);
         $event = $connection->read(1.5);
