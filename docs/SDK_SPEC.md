@@ -216,9 +216,9 @@ deliveryPromise, storeSlug, sort, createdAt range, distinctValues, onlyPromo, ..
 
 | Method | GraphQL |
 |---|---|
-| `buying.buyProduct(productId, opts)` | `market_buy(id)` |
+| `buying.buyProduct(productId, maxPrice?, opts)` | `market_buy(id, maxPriceInput)` |
 | `buying.buyCheapest(app, nameHash, opts{phase, maxPrice, deliveryPromise})` | `market_buy(appIdNameHashInput, maxPriceInput)` |
-| `buying.buyByAssetId(app, assetId, opts)` | `market_buy(appIdAssetIdInput)` |
+| `buying.buyByAssetId(app, assetId, maxPrice?, opts)` | `market_buy(appIdAssetIdInput, maxPriceInput)` |
 
 Common `opts`: `customId?` (generated UUIDv4 if absent, max 100 chars validated client-side), `tradeUrl?` (`link`, buy to a third party).
 Return `BuyResult { deal: Deal, customId, reconciled: bool }`.
@@ -259,6 +259,10 @@ Reconciliation rules (they refine the algorithm above):
    A rejection is: no `market_buy` data and every error path empty or exactly `[market_buy]`. Residual: a root-path
    error raised after the server committed the deal still reads as a rejection; telling those apart needs the
    backend's category catalogue (WHITEMARKET_API.md open questions).
+7. Every buy form takes an optional `maxPrice` (`Money`) and sends it as `maxPriceInput`; null sends nothing. The
+   currency is validated as for `buyCheapest`. A listing's price can change between reading it and buying it; the cap
+   makes the server refuse a dearer purchase (`market.product.not_found_in_specified_price`, a `GraphQLError`, no deal
+   [observed 2026-11-02 with `id`; `appIdAssetIdInput` not tried]) instead of taking whatever price holds then.
 
 `deliveryType` on `market_buy` is deprecated and not exposed.
 
@@ -275,7 +279,7 @@ Reconciliation rules (they refine the algorithm above):
 | `deals.reportOfferSent(idOrCustomId, offerId)` | `deal_steam_offer_sent` |
 | `deals.cancelSendingOffer(idOrCustomId, reason, comment)` | `deal_cancel_sending_offer`, comment validated: <= 255 chars, `^[a-zA-Z0-9 _-]*$` |
 | `deals.holdBalance(currency)` / `deals.holdBalances()` | `deal_balance_hold`, `deal_balances_hold` |
-| `deals.waitFor(idOrCustomId, until, opts{timeout, pollInterval=5s, live?})` | polls `deal_buyer_statuses`; if a live connection is passed, wakes up on deal events and re-checks |
+| `deals.waitFor(idOrCustomId, until, opts{timeout, pollInterval=5s, live?})` | polls `deal_buyer_statuses` (seller deals: rule 12); if a live connection is passed, wakes up on deal events and re-checks |
 
 `DealStatus` helpers (from the table in WHITEMARKET_API.md section 4): `isInProgress`, `isFinal`, `isSuccessful`
 (`COMPLETED`), `isFailed`, `isReversed`, `isExchanged`, `awaitingTradeProtection(deal)` (`EXCHANGED && isTradeProtected`).
@@ -316,6 +320,10 @@ Rules for `deals`:
 11. A deal in progress exposes `receiverTradeUrl` (`MarketDeal.receiverTradeUrl`) as a secret, null for null / empty
     and for an archived deal: a MANUAL seller sends the item's `assetId` to it [docs 6-skins-sell], and the URL carries
     the buyer's trade token (same handling as `Profile.steamTradeUrl`, section 3.9 rule 1).
+12. `deal_buyer_statuses` returns no row for a deal where the caller is the seller [observed 2026-11-02: a SEMI sale
+    gave 0 rows while `deal_item` returned it]. When the reference is not in the answer, `waitFor` reads the deal with
+    `deals.get` (`deal_item`, then `deal_history_item`) and keeps using `get` for the rest of the call. A not-found
+    answer of both is "not there yet", like an absent status (rule 4).
 
 ### 3.5 selling
 
