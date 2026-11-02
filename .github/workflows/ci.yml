@@ -65,14 +65,18 @@ jobs:
       # The coverage gate runs once, on the tools PHP version (Makefile "check"); the other versions run the tests.
       - run: make ${{ matrix.php == '8.5' && 'coverage' || 'test' }} VERBOSE=1
 
+  # A pull request mutates only its added and modified lines of src/ (minutes); push to main and manual runs mutate
+  # everything (about 35 min on a 3-thread runner, 4000+ mutants) and enforce the MSI thresholds of infection.json5.
   mutation:
     name: Mutation tests (Infection)
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The changed-lines run diffs against the base branch, which needs the history.
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
       - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.5'
@@ -83,7 +87,14 @@ jobs:
           path: ~/.cache/composer
           key: composer-mutation-${{ hashFiles('composer.lock', 'tools/infection/composer.lock') }}
       - run: make install
-      - run: make infection VERBOSE=1
+      - name: make infection
+        env:
+          # Pull requests target main; a fixed base keeps branch names out of the command line.
+          INFECTION_ARGS: >-
+            ${{ github.event_name == 'pull_request'
+            && '--git-diff-lines --git-diff-base=origin/main --ignore-msi-with-no-mutations'
+            || '' }}
+        run: make infection VERBOSE=1
 
   repo-hygiene:
     name: Secret scan, workflow lint, agent hooks
