@@ -68,13 +68,6 @@ final class MarketList
                     }
                     order {
                       __typename
-                      ... on CSGOMarketOrderPublic {
-                        ...CSGOMarketOrderPublicFields
-                        inventory {
-                          __typename
-                          id
-                        }
-                      }
                     }
                     product {
                       ...MarketProductFields
@@ -163,24 +156,6 @@ final class MarketList
           sellerSteamId
           similarQty
           updatedAt
-        }
-
-        fragment CSGOMarketOrderPublicFields on CSGOMarketOrderPublic {
-          app
-          category
-          exterior
-          icon
-          iconLarge
-          id
-          isMy
-          isSouvenir
-          isStatTrak
-          nameHash
-          quantity
-          rarity
-          short
-          skin
-          subcategory
         }
 
         fragment CSGOSteamItemFields on CSGOSteamItem {
