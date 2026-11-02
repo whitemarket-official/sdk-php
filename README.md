@@ -26,7 +26,7 @@ Not available yet (the API is not in this SDK, do not look for it):
 
 | Feature | Status |
 |---|---|
-| Buy orders | not available yet (P14) |
+| Buy orders | not available yet (planned; the generated `order*` operations work) |
 
 ## Install
 
@@ -90,7 +90,7 @@ Never hard-code a Partner Token in source. Read it from the environment or a sec
 | [Exports](#exports) | `$client->exports` | `meta`, `prices`, `streamPrices`, `streamProducts`, `download`, `affiliateLink` | [`export_prices_lookup.php`](examples/export_prices_lookup.php), [`export_products_stream.php`](examples/export_products_stream.php) |
 | [Live](#live-updates) | `$client->live()` | product feed, personal deal events, WebSocket or SSE | [`ws_products_feed.php`](examples/ws_products_feed.php), [`sse_products_feed.php`](examples/sse_products_feed.php), [`ws_personal_deals.php`](examples/ws_personal_deals.php) |
 | [Generated layer](#generated-layer) | `$client->generated` | one method per schema operation, `execute()` | [`raw_generated_operation.php`](examples/raw_generated_operation.php) |
-| Buy orders | not available yet (P14) | | |
+| Buy orders | not available yet (planned; the generated `order*` operations work) | | |
 
 ## Authentication
 
@@ -333,8 +333,9 @@ $client->inventory->refreshFromSteam(); // asks the server to re-read the Steam 
 ### Orders (buy orders)
 
 Not available yet. The buy-order API (`orders`: create, edit, activate, deactivate, delete, search, `mine*`) is
-specified in SDK_SPEC 3.7 but not implemented in this SDK: there is no `$client->orders` and `src/Orders/` is empty
-(P14). The generated layer already has the raw operations (`orderMy()`, `orderMyActive()`,
+specified in SDK_SPEC 3.7 but not implemented in this SDK: there is no `$client->orders` and `src/Orders/` is empty.
+The order types reached the public schema on 2026-11-02; the module follows in a later release. The generated
+layer already has the raw operations, and they return the order classes (`orderMy()`, `orderMyActive()`,
 `orderList()`, ...), see [Generated layer](#generated-layer).
 
 ### Wallet

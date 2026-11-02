@@ -189,6 +189,12 @@ Shared types [schema]:
   `{ edges: [{ cursor, node }], pageInfo { hasNextPage hasPreviousPage startCursor endCursor }, totalCount }`.
 - Scalars: `Uuid` (string), `DateTime` (ISO-8601 string with offset), `FileUpload` (not used by partner flows).
 - `MarketDealState { id customId steamId tradeId status cancelReason price settlementTimeAt isTradeProtected reversePenaltyValue reverseRefundValue }`.
+- Orders [schema, sync of 2026-11-02]: `MarketOrder` is implemented by `CSGOMarketOrder` (own orders: `id app nameHash
+  price params phase exterior rarity short skin quantity quantitySuccess quantityProgress quantityFailed status comment
+  link createdAt expiredAt icon iconLarge`), `MarketOrderPublic` by `CSGOMarketOrderPublic` (`order_list`: `id app
+  nameHash price params quantity isMy inventory category subcategory exterior rarity short skin isSouvenir isStatTrak
+  icon iconLarge`). Before that sync both interfaces had no possible type, so `order_*` returned no order data.
+  `CSGOMarketOrder.link` is a trade URL with the Steam trade token (handle like `Profile.steamTradeUrl`).
 - `MarketProductResult { product: MarketProductUnion, isCreated: Boolean!, errorCategory: String, errorMessage: String, index: Int! }`:
   per-item result of `*_multiple` mutations. A batch call can partially fail; the SDK surfaces per-item results, it does not throw for item failures.
 

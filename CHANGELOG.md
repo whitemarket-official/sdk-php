@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Known limitations
 
-- No `orders` module: the public schema hides every order type (proposal P14, DEVIATIONS).
+- No `orders` module yet: the order types reached the public schema on 2026-11-02 (`CSGOMarketOrder`,
+  `CSGOMarketOrderPublic`); the high-level module follows in a later release, the generated `order*` operations work
+  now (DEVIATIONS).
 - The `extensions.category` catalogue is unknown: a post-commit error on the root path of `market_buy`, `transfer` or
   `takeCredit` is read as a rejection (SDK_SPEC 3.3 rule 6, 3.5 rule 8, 3.8 rule 5).
 - Live product prices are assumed to be USD (owner decision O1); live has no gap-free resume (no `recover`), resync on

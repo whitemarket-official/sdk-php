@@ -277,8 +277,9 @@ Status: approved by the owner 2026-11-01, merged into SDK_SPEC section 3.6 (was:
 
 ## P14. Section 1.2 operation generator: interfaces without possible types
 
-Status: proposed (session 15, T4.2); NOT implemented (the generator is byte-for-byte identical in all seven repos, so
-it changes only after the owner approves). Blocks T4.2 (orders) in the PHP SDK. Awaits the owner.
+Status: obsolete (2026-11-02). The backend added the implementations (`CSGOMarketOrder`, `CSGOMarketOrderPublic`) and
+the schema sync of 2026-11-02 brought them in, so the existing inline-fragment rule selects the order fields; no
+generator change is needed. T4.2 (orders) is unblocked.
 
 - Before: "Interfaces and unions: `__typename` plus `... on <Type> { ... }` for every possible type". The public
   partner schema declares `MarketOrder` and `MarketOrderPublic` as interfaces with no implementing type
