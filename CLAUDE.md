@@ -142,7 +142,7 @@ Project skills live in `.claude/skills/`. Call them **before** the work when the
 |---|---|
 | `clean-code-review` -> `quality-checks` -> `secure-coding` | readiness chain, rules 0-, 0, 0a |
 | `testing` | before writing or changing tests |
-| `schema-update` | reviewing a schema-sync PR or a change in `schema/` |
+| `schema-update` | reviewing a schema-sync PR (`/schema-update <PR number>`, ends with MERGE / DO NOT MERGE) or a change in `schema/` |
 | `add-sdk-method` | adding or changing a high-level method (spec, generated op, mapper, errors, tests, README, example) |
 | `clarify-spec` / `analyze-plan` | after a spec, before a plan / after a plan, before implementing (GO / NO-GO) |
 | `pr-review` | review of a GitHub PR by number (`gh`), replies to review threads, red CI |
