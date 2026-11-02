@@ -34,8 +34,9 @@ final class LoopbackServer
      * Sends each of `$bodies` with `$client` to a server in `$mode` and returns the request log of the server.
      *
      * @param list<string> $bodies
+     * @param array<string, string> $headers sent with every request
      */
-    public static function bodiesReceived(string $mode, ClientInterface $client, array $bodies, bool $bodyReadBeforeSending = false): string
+    public static function bodiesReceived(string $mode, ClientInterface $client, array $bodies, bool $bodyReadBeforeSending = false, array $headers = []): string
     {
         $log = (string) tempnam(sys_get_temp_dir(), 'wm-requests-');
         $server = proc_open([\PHP_BINARY, __DIR__ . '/../fixtures/servers/loopback.php', $log, $mode], [1 => ['pipe', 'w']], $pipes);
@@ -46,7 +47,7 @@ final class LoopbackServer
             $stdout = $pipes[1] ?? throw new \RuntimeException('The loopback server has no stdout.');
             $url = 'http://localhost:' . trim((string) fgets($stdout)) . '/graphql/partner';
             foreach ($bodies as $body) {
-                self::send($client, $url, $body, $bodyReadBeforeSending);
+                self::send($client, $url, $body, $bodyReadBeforeSending, $headers);
             }
 
             return (string) file_get_contents($log);
@@ -57,15 +58,20 @@ final class LoopbackServer
         }
     }
 
-    private static function send(ClientInterface $client, string $url, string $body, bool $bodyReadBeforeSending): void
+    /** @param array<string, string> $headers */
+    private static function send(ClientInterface $client, string $url, string $body, bool $bodyReadBeforeSending, array $headers): void
     {
         $factory = GuzzleClientFactory::messageFactory();
         $stream = $factory->createStream($body);
         if ($bodyReadBeforeSending) {
             $stream->getContents();
         }
+        $request = $factory->createRequest('POST', $url)->withBody($stream);
+        foreach ($headers as $name => $value) {
+            $request = $request->withHeader($name, $value);
+        }
         try {
-            $client->sendRequest($factory->createRequest('POST', $url)->withBody($stream));
+            $client->sendRequest($request);
         } catch (ClientExceptionInterface) {
             // A dropped connection is a network error; what counts is how often the server received the request.
         }

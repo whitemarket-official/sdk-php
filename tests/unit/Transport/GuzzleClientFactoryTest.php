@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Tests\Unit\Transport;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\RequestOptions;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use WhiteMarket\Sdk\Export\ExportOptions;
 use WhiteMarket\Sdk\Live\LiveOptions;
 use WhiteMarket\Sdk\Tests\Support\LoopbackServer;
@@ -18,6 +22,8 @@ use WhiteMarket\Sdk\Transport\TransportOptions;
 #[CoversClass(GuzzleClientFactory::class)]
 final class GuzzleClientFactoryTest extends TestCase
 {
+    private const CREDENTIAL_HEADERS = ['Authorization' => 'Bearer synthetic-jwt', 'X-partner-token' => 'synthetic-partner-token'];
+
     #[Test]
     public function configuresTimeoutsTlsRedirectsAndDecompression(): void
     {
@@ -88,6 +94,44 @@ final class GuzzleClientFactoryTest extends TestCase
         $received = LoopbackServer::bodiesReceived($mode, GuzzleClientFactory::createForMutations(), $bodies, $bodyReadBeforeSending);
 
         self::assertSame(implode("\n", $bodies) . "\n", $received);
+    }
+
+    /** @return iterable<string, array{\Closure(): ClientInterface}> */
+    public static function defaultClients(): iterable
+    {
+        yield 'query client' => [static fn(): ClientInterface => GuzzleClientFactory::create()];
+        yield 'mutation client' => [static fn(): ClientInterface => GuzzleClientFactory::createForMutations()];
+        yield 'live (SSE) client' => [static fn(): ClientInterface => GuzzleClientFactory::createForLive()];
+        yield 'export client' => [static fn(): ClientInterface => GuzzleClientFactory::createForExports()];
+    }
+
+    /** @param \Closure(): ClientInterface $client */
+    #[Test]
+    #[DataProvider('defaultClients')]
+    public function sendsNothingToTheHostARedirectPointsAt(\Closure $client): void
+    {
+        $received = LoopbackServer::bodiesReceived('redirect-elsewhere', $client(), ['only'], headers: self::CREDENTIAL_HEADERS);
+
+        self::assertSame("only\n", $received);
+    }
+
+    /**
+     * Control for {@see sendsNothingToTheHostARedirectPointsAt()}: a client that follows the redirect does reach the
+     * other host, and Guzzle's own cross-host stripping drops `Authorization` but keeps `X-partner-token`.
+     */
+    #[Test]
+    public function aClientThatFollowsRedirectsCarriesThePartnerTokenToTheOtherHost(): void
+    {
+        $following = new class implements ClientInterface {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                return (new Client())->send($request, [RequestOptions::ALLOW_REDIRECTS => true, RequestOptions::HTTP_ERRORS => false]);
+            }
+        };
+
+        $received = LoopbackServer::bodiesReceived('redirect-elsewhere', $following, ['only'], headers: self::CREDENTIAL_HEADERS);
+
+        self::assertSame("only\nredirected authorization=no x-partner-token=yes only\n", $received);
     }
 
     #[Test]
