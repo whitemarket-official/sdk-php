@@ -51,6 +51,13 @@ query MarketMy($forwardPagination: ForwardPaginationInput = null, $search: Marke
             }
             order {
               __typename
+              ... on CSGOMarketOrderPublic {
+                ...CSGOMarketOrderPublicFields
+                inventory {
+                  __typename
+                  id
+                }
+              }
             }
             product {
               ...MarketProductFields

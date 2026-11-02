@@ -48,6 +48,13 @@ query MarketItem($idOrSlug: String!) {
         }
         order {
           __typename
+          ... on CSGOMarketOrderPublic {
+            ...CSGOMarketOrderPublicFields
+            inventory {
+              __typename
+              id
+            }
+          }
         }
         product {
           ...MarketProductFields

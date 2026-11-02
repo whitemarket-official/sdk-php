@@ -22,6 +22,15 @@ final class OrderMyActive
               cursor
               node {
                 __typename
+                ... on CSGOMarketOrder {
+                  ...CSGOMarketOrderFields
+                  params {
+                    ...MarketOrderParamValueFields
+                  }
+                  price {
+                    ...MoneyFields
+                  }
+                }
               }
             }
             pageInfo {
@@ -32,6 +41,38 @@ final class OrderMyActive
             }
             totalCount
           }
+        }
+
+        fragment CSGOMarketOrderFields on CSGOMarketOrder {
+          app
+          comment
+          createdAt
+          expiredAt
+          exterior
+          icon
+          iconLarge
+          id
+          link
+          nameHash
+          phase
+          quantity
+          quantityFailed
+          quantityProgress
+          quantitySuccess
+          rarity
+          short
+          skin
+          status
+        }
+
+        fragment MarketOrderParamValueFields on MarketOrderParamValue {
+          param
+          value
+        }
+
+        fragment MoneyFields on Money {
+          currency
+          value
         }
         GRAPHQL;
 

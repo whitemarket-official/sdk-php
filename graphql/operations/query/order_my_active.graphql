@@ -5,6 +5,15 @@ query OrderMyActive($forwardPagination: ForwardPaginationInput = null) {
       cursor
       node {
         __typename
+        ... on CSGOMarketOrder {
+          ...CSGOMarketOrderFields
+          params {
+            ...MarketOrderParamValueFields
+          }
+          price {
+            ...MoneyFields
+          }
+        }
       }
     }
     pageInfo {

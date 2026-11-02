@@ -55,6 +55,13 @@ mutation MarketNew($assetId: String, $deliveryPromise: DeliveryPromise, $deliver
         }
         order {
           __typename
+          ... on CSGOMarketOrderPublic {
+            ...CSGOMarketOrderPublicFields
+            inventory {
+              __typename
+              id
+            }
+          }
         }
         product {
           ...MarketProductFields

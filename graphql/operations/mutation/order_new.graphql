@@ -10,5 +10,14 @@ mutation OrderNew($app: SteamApp!, $csgoFloat: DecimalNotNullRangeInput, $csgoPh
     quantity: $quantity
   ) {
     __typename
+    ... on CSGOMarketOrder {
+      ...CSGOMarketOrderFields
+      params {
+        ...MarketOrderParamValueFields
+      }
+      price {
+        ...MoneyFields
+      }
+    }
   }
 }

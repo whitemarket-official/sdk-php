@@ -22,6 +22,87 @@ final class OrderList
               cursor
               node {
                 __typename
+                ... on CSGOMarketOrderPublic {
+                  ...CSGOMarketOrderPublicFields
+                  inventory {
+                    __typename
+                    ... on CSGOInventoryItem {
+                      ...CSGOInventoryItemFields
+                      charmGradient {
+                        ...CSGOCharmGradientFields
+                      }
+                      charms {
+                        ...CSGOCharmFields
+                      }
+                      deal {
+                        ...MarketDealFields
+                        buyer {
+                          id
+                        }
+                        item {
+                          __typename
+                          id
+                        }
+                        product {
+                          id
+                        }
+                        seller {
+                          id
+                        }
+                      }
+                      description {
+                        __typename
+                        ... on CSGOSteamItem {
+                          ...CSGOSteamItemFields
+                        }
+                      }
+                      instantSellPrice {
+                        ...MoneyFields
+                      }
+                      maxPriceForSell {
+                        ...MoneyFields
+                      }
+                      minPrice {
+                        ...MoneyFields
+                      }
+                      order {
+                        __typename
+                        ... on CSGOMarketOrderPublic {
+                          ...CSGOMarketOrderPublicFields
+                          inventory {
+                            __typename
+                            id
+                          }
+                        }
+                      }
+                      product {
+                        ...MarketProductFields
+                        item {
+                          __typename
+                          id
+                        }
+                        store {
+                          id
+                        }
+                      }
+                      purchasePrice {
+                        ...MoneyFields
+                      }
+                      recommendedPrice {
+                        ...MoneyFields
+                      }
+                      stickers {
+                        ...CSGOStickerFields
+                      }
+                    }
+                  }
+                  params {
+                    ...MarketOrderParamValueFields
+                  }
+                  price {
+                    ...MoneyFields
+                  }
+                }
               }
             }
             pageInfo {
@@ -32,6 +113,147 @@ final class OrderList
             }
             totalCount
           }
+        }
+
+        fragment CSGOCharmFields on CSGOCharm {
+          icon
+          name
+          pattern
+          title
+        }
+
+        fragment CSGOCharmGradientFields on CSGOCharmGradient {
+          youtubeLink
+        }
+
+        fragment CSGOInventoryItemFields on CSGOInventoryItem {
+          amount
+          appId
+          assetId
+          canInstantSell
+          classId
+          contextId
+          exteriorEnum
+          fade
+          fadeRank
+          float
+          id
+          instanceId
+          isAdditionalDataMissed
+          isStickersDataMissed
+          link
+          nameHash
+          paintIndex
+          paintSeed
+          phase
+          phaseEnum
+          purchasePriceIndicator
+          sellerSteamId
+          similarQty
+          updatedAt
+        }
+
+        fragment CSGOMarketOrderPublicFields on CSGOMarketOrderPublic {
+          app
+          category
+          exterior
+          icon
+          iconLarge
+          id
+          isMy
+          isSouvenir
+          isStatTrak
+          nameHash
+          quantity
+          rarity
+          short
+          skin
+          subcategory
+        }
+
+        fragment CSGOSteamItemFields on CSGOSteamItem {
+          appId
+          categoryEnum
+          categoryTitle
+          charmImage
+          charmTitle
+          classId
+          description
+          icon
+          iconLarge
+          instanceId
+          isSouvenir
+          isStatTrak
+          isTradeable
+          marketTradeableRestriction
+          name
+          nameHash
+          short
+          shortEn
+          skin
+          skinEn
+          subcategoryEnum
+          subcategoryTitle
+          subtypeEnum
+          typeEnum
+          updatedAt
+        }
+
+        fragment CSGOStickerFields on CSGOSticker {
+          film
+          icon
+          name
+          offsetX
+          offsetY
+          title
+          wear
+        }
+
+        fragment MarketDealFields on MarketDeal {
+          cancelByBuyerNeedWait
+          createdAt
+          customId
+          deliveryType
+          expiredAt
+          groupId
+          id
+          isCancelByBuyerSupported
+          isTradeProtected
+          orderId
+          receiverTradeUrl
+          settlementTimeAt
+          status
+          steamId
+          tradeId
+        }
+
+        fragment MarketOrderParamValueFields on MarketOrderParamValue {
+          param
+          value
+        }
+
+        fragment MarketProductFields on MarketProduct {
+          createdAt
+          daysOnMarket
+          deliveryPromise
+          deliveryType
+          discount
+          id
+          isOwner
+          isSuperDeal
+          offerType
+          reviewResponse
+          screenshotId
+          similarQty
+          slug
+          special
+          state
+          storeSimilarQty
+        }
+
+        fragment MoneyFields on Money {
+          currency
+          value
         }
         GRAPHQL;
 

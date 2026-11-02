@@ -48,6 +48,13 @@ mutation MarketEdit($marketProductId: String!, $price: MoneyInput!) {
         }
         order {
           __typename
+          ... on CSGOMarketOrderPublic {
+            ...CSGOMarketOrderPublicFields
+            inventory {
+              __typename
+              id
+            }
+          }
         }
         product {
           ...MarketProductFields

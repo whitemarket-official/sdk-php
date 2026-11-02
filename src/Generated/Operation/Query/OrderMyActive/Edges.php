@@ -13,7 +13,7 @@ final class Edges
 {
     public function __construct(
         public readonly string $cursor,
-        public readonly ?\WhiteMarket\Sdk\GraphQL\UnknownTypeValue $node,
+        public readonly \WhiteMarket\Sdk\Generated\Operation\Query\OrderMyActive\EdgesNode|\WhiteMarket\Sdk\GraphQL\UnknownTypeValue|null $node,
     ) {}
 
     public static function fromValue(#[\SensitiveParameter] mixed $value, string $path): self
@@ -22,7 +22,7 @@ final class Edges
 
         return new self(
             cursor: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'cursor', $path, \WhiteMarket\Sdk\GraphQL\Decode::string(...)),
-            node: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'node', $path, \WhiteMarket\Sdk\GraphQL\Decode::nullableOf(\WhiteMarket\Sdk\GraphQL\Decode::unknownType(...))),
+            node: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'node', $path, \WhiteMarket\Sdk\GraphQL\Decode::nullableOf(\WhiteMarket\Sdk\GraphQL\Decode::abstractOf(['CSGOMarketOrder' => \WhiteMarket\Sdk\Generated\Operation\Query\OrderMyActive\EdgesNodeCSGOMarketOrder::fromValue(...)]))),
         );
     }
 }

@@ -199,7 +199,7 @@ final class GeneratedClient
 
     /**
      * @param list<string> $ids
-     * @return list<\WhiteMarket\Sdk\GraphQL\UnknownTypeValue>
+     * @return list<\WhiteMarket\Sdk\Generated\Operation\Mutation\OrderActivate\Result|\WhiteMarket\Sdk\GraphQL\UnknownTypeValue>
      */
     public function orderActivate(#[\SensitiveParameter] array $ids): array
     {
@@ -213,7 +213,7 @@ final class GeneratedClient
 
     /**
      * @param list<string> $ids
-     * @return list<\WhiteMarket\Sdk\GraphQL\UnknownTypeValue>
+     * @return list<\WhiteMarket\Sdk\Generated\Operation\Mutation\OrderDeactivate\Result|\WhiteMarket\Sdk\GraphQL\UnknownTypeValue>
      */
     public function orderDeactivate(#[\SensitiveParameter] array $ids): array
     {
@@ -227,7 +227,7 @@ final class GeneratedClient
 
     /**
      * @param list<string> $ids
-     * @return list<\WhiteMarket\Sdk\GraphQL\UnknownTypeValue>
+     * @return list<\WhiteMarket\Sdk\Generated\Operation\Mutation\OrderDelete\Result|\WhiteMarket\Sdk\GraphQL\UnknownTypeValue>
      */
     public function orderDelete(#[\SensitiveParameter] array $ids): array
     {
@@ -239,7 +239,7 @@ final class GeneratedClient
         return \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderDeleteAll::decode($this->executor->execute(\WhiteMarket\Sdk\Generated\Operation\Mutation\OrderDeleteAll::DOCUMENT, \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderDeleteAll::NAME, \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderDeleteAll::TYPE, \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderDeleteAll::variables()));
     }
 
-    public function orderEdit(#[\SensitiveParameter] string $id, #[\SensitiveParameter] \WhiteMarket\Sdk\Generated\Input\MoneyInput $price, #[\SensitiveParameter] int $quantity, #[\SensitiveParameter] ?\WhiteMarket\Sdk\Generated\Input\SteamLinkInput $link = null): \WhiteMarket\Sdk\GraphQL\UnknownTypeValue
+    public function orderEdit(#[\SensitiveParameter] string $id, #[\SensitiveParameter] \WhiteMarket\Sdk\Generated\Input\MoneyInput $price, #[\SensitiveParameter] int $quantity, #[\SensitiveParameter] ?\WhiteMarket\Sdk\Generated\Input\SteamLinkInput $link = null): \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderEdit\Result|\WhiteMarket\Sdk\GraphQL\UnknownTypeValue
     {
         return \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderEdit::decode($this->executor->execute(\WhiteMarket\Sdk\Generated\Operation\Mutation\OrderEdit::DOCUMENT, \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderEdit::NAME, \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderEdit::TYPE, \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderEdit::variables(id: $id, link: $link, price: $price, quantity: $quantity)));
     }
@@ -269,7 +269,7 @@ final class GeneratedClient
         return \WhiteMarket\Sdk\Generated\Operation\Query\OrderMyInactive::decode($this->executor->execute(\WhiteMarket\Sdk\Generated\Operation\Query\OrderMyInactive::DOCUMENT, \WhiteMarket\Sdk\Generated\Operation\Query\OrderMyInactive::NAME, \WhiteMarket\Sdk\Generated\Operation\Query\OrderMyInactive::TYPE, \WhiteMarket\Sdk\Generated\Operation\Query\OrderMyInactive::variables(forwardPagination: $forwardPagination)));
     }
 
-    public function orderNew(#[\SensitiveParameter] \WhiteMarket\Sdk\Generated\Enum\SteamApp $app, #[\SensitiveParameter] string $nameHash, #[\SensitiveParameter] \WhiteMarket\Sdk\Generated\Input\MoneyInput $price, #[\SensitiveParameter] int $quantity, #[\SensitiveParameter] ?\WhiteMarket\Sdk\Generated\Input\DecimalNotNullRangeInput $csgoFloat = null, #[\SensitiveParameter] ?\WhiteMarket\Sdk\Generated\Enum\CSGOPhase $csgoPhase = null, #[\SensitiveParameter] ?\WhiteMarket\Sdk\Generated\Input\SteamLinkInput $link = null): \WhiteMarket\Sdk\GraphQL\UnknownTypeValue
+    public function orderNew(#[\SensitiveParameter] \WhiteMarket\Sdk\Generated\Enum\SteamApp $app, #[\SensitiveParameter] string $nameHash, #[\SensitiveParameter] \WhiteMarket\Sdk\Generated\Input\MoneyInput $price, #[\SensitiveParameter] int $quantity, #[\SensitiveParameter] ?\WhiteMarket\Sdk\Generated\Input\DecimalNotNullRangeInput $csgoFloat = null, #[\SensitiveParameter] ?\WhiteMarket\Sdk\Generated\Enum\CSGOPhase $csgoPhase = null, #[\SensitiveParameter] ?\WhiteMarket\Sdk\Generated\Input\SteamLinkInput $link = null): \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderNew\Result|\WhiteMarket\Sdk\GraphQL\UnknownTypeValue
     {
         return \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderNew::decode($this->executor->execute(\WhiteMarket\Sdk\Generated\Operation\Mutation\OrderNew::DOCUMENT, \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderNew::NAME, \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderNew::TYPE, \WhiteMarket\Sdk\Generated\Operation\Mutation\OrderNew::variables(app: $app, csgoFloat: $csgoFloat, csgoPhase: $csgoPhase, link: $link, nameHash: $nameHash, price: $price, quantity: $quantity)));
     }

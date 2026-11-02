@@ -2,5 +2,14 @@
 mutation OrderActivate($ids: [Uuid!]!) {
   order_activate(ids: $ids) {
     __typename
+    ... on CSGOMarketOrder {
+      ...CSGOMarketOrderFields
+      params {
+        ...MarketOrderParamValueFields
+      }
+      price {
+        ...MoneyFields
+      }
+    }
   }
 }
