@@ -1281,6 +1281,7 @@ enum MarketDealCancelReason {
   BUYER_TOO_MANY_FAILED_ATTEMPTS
   BUYER_TRADE_URL_INVALID
   CANCEL_BY_ADMIN
+  INSTANT_EXCHANGE_FAILED
   INTERNAL
   NO_FUNDS
   SELLER_APIKEY_INVALID
@@ -1517,6 +1518,9 @@ enum MarketDealStatus {
   Offered in steam by buyer to seller or seller to buyer, not final status
   """
   OFFERED
+
+  """Waiting to send trade offer"""
+  QUEUED
 
   """Cancelled due to seller’s fault, final status"""
   SELLER_CANCELLED
@@ -2057,6 +2061,7 @@ input MarketProductSearchInput {
 
   """Get only unique (by name hash) products or not"""
   distinctValues: Boolean
+  forTrade: Boolean
 
   """Product IDs @example 1edf828f-d3c4-65ca-909c-0242ac12001d"""
   ids: [Uuid!]
@@ -2135,6 +2140,7 @@ input MarketProductSortInput {
 
 enum MarketProductState {
   ACTIVE
+  AVAILABLE_FOR_TRADE
   INACTIVE
   OVERPRICED
   REVIEW_DECLINED
@@ -3240,6 +3246,13 @@ enum WalletTransactionReason {
   BONUS
   DEPOSIT
   GIFT_CARD_PURCHASE
+  INSTANT_EXCHANGE
+  INSTANT_EXCHANGE_HOLD_RELEASE_IN
+  INSTANT_EXCHANGE_HOLD_RELEASE_OUT
+  INSTANT_EXCHANGE_REFUND_IN
+  INSTANT_EXCHANGE_REFUND_OUT
+  INSTANT_EXCHANGE_TRANSFER_IN
+  INSTANT_EXCHANGE_TRANSFER_OUT
   INTERNAL
   MARKET_OFFER_HOLD
   MARKET_PRODUCT

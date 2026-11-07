@@ -65,6 +65,10 @@ enum MarketDealStatus: string
      */
     case OFFERED = 'OFFERED';
     /**
+     * Waiting to send trade offer
+     */
+    case QUEUED = 'QUEUED';
+    /**
      * Cancelled due to seller’s fault, final status
      */
     case SELLER_CANCELLED = 'SELLER_CANCELLED';
