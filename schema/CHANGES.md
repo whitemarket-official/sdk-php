@@ -84,3 +84,23 @@ made while the SDK was in development before it are not listed.
 - Type 'CSGOMarketOrder' was added
 - Type 'CSGOMarketOrderPublic' was added
 
+## 2026-11-07
+
+### Dangerous (10)
+
+- Enum value 'AVAILABLE_FOR_TRADE' was added to enum 'MarketProductState'
+- Enum value 'INSTANT_EXCHANGE' was added to enum 'WalletTransactionReason'
+- Enum value 'INSTANT_EXCHANGE_FAILED' was added to enum 'MarketDealCancelReason'
+- Enum value 'INSTANT_EXCHANGE_HOLD_RELEASE_IN' was added to enum 'WalletTransactionReason'
+- Enum value 'INSTANT_EXCHANGE_HOLD_RELEASE_OUT' was added to enum 'WalletTransactionReason'
+- Enum value 'INSTANT_EXCHANGE_REFUND_IN' was added to enum 'WalletTransactionReason'
+- Enum value 'INSTANT_EXCHANGE_REFUND_OUT' was added to enum 'WalletTransactionReason'
+- Enum value 'INSTANT_EXCHANGE_TRANSFER_IN' was added to enum 'WalletTransactionReason'
+- Enum value 'INSTANT_EXCHANGE_TRANSFER_OUT' was added to enum 'WalletTransactionReason'
+- Enum value 'QUEUED' was added to enum 'MarketDealStatus'
+
+### Safe (2)
+
+- Description 'Waiting to send trade offer' was added to enum value 'MarketDealStatus.QUEUED'
+- Input field 'forTrade' of type 'Boolean' was added to input object type 'MarketProductSearchInput'
+

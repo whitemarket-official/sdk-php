@@ -9,6 +9,7 @@ namespace WhiteMarket\Sdk\Generated\Enum;
 enum MarketProductState: string
 {
     case ACTIVE = 'ACTIVE';
+    case AVAILABLE_FOR_TRADE = 'AVAILABLE_FOR_TRADE';
     case INACTIVE = 'INACTIVE';
     case OVERPRICED = 'OVERPRICED';
     case REVIEW_DECLINED = 'REVIEW_DECLINED';
