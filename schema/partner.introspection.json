@@ -6897,6 +6897,12 @@
             "deprecationReason": null,
             "description": null,
             "isDeprecated": false,
+            "name": "INSTANT_EXCHANGE_FAILED"
+          },
+          {
+            "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
             "name": "INTERNAL"
           },
           {
@@ -7874,6 +7880,12 @@
             "description": "Offered in steam by buyer to seller or seller to buyer, not final status",
             "isDeprecated": false,
             "name": "OFFERED"
+          },
+          {
+            "deprecationReason": null,
+            "description": "Waiting to send trade offer",
+            "isDeprecated": false,
+            "name": "QUEUED"
           },
           {
             "deprecationReason": null,
@@ -10608,6 +10620,18 @@
           {
             "defaultValue": null,
             "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
+            "name": "forTrade",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          },
+          {
+            "defaultValue": null,
+            "deprecationReason": null,
             "description": "Product IDs @example 1edf828f-d3c4-65ca-909c-0242ac12001d",
             "isDeprecated": false,
             "name": "ids",
@@ -10970,6 +10994,12 @@
             "description": null,
             "isDeprecated": false,
             "name": "ACTIVE"
+          },
+          {
+            "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
+            "name": "AVAILABLE_FOR_TRADE"
           },
           {
             "deprecationReason": null,
@@ -17413,6 +17443,48 @@
             "description": null,
             "isDeprecated": false,
             "name": "GIFT_CARD_PURCHASE"
+          },
+          {
+            "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
+            "name": "INSTANT_EXCHANGE"
+          },
+          {
+            "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
+            "name": "INSTANT_EXCHANGE_HOLD_RELEASE_IN"
+          },
+          {
+            "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
+            "name": "INSTANT_EXCHANGE_HOLD_RELEASE_OUT"
+          },
+          {
+            "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
+            "name": "INSTANT_EXCHANGE_REFUND_IN"
+          },
+          {
+            "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
+            "name": "INSTANT_EXCHANGE_REFUND_OUT"
+          },
+          {
+            "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
+            "name": "INSTANT_EXCHANGE_TRANSFER_IN"
+          },
+          {
+            "deprecationReason": null,
+            "description": null,
+            "isDeprecated": false,
+            "name": "INSTANT_EXCHANGE_TRANSFER_OUT"
           },
           {
             "deprecationReason": null,

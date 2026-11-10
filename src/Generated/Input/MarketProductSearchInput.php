@@ -84,6 +84,7 @@ final class MarketProductSearchInput implements \WhiteMarket\Sdk\GraphQL\InputOb
         public readonly ?\WhiteMarket\Sdk\Generated\Enum\DeliveryPromise $deliveryPromise = null,
         public readonly ?\WhiteMarket\Sdk\Generated\Enum\DeliveryType $deliveryType = null,
         public readonly ?bool $distinctValues = null,
+        public readonly ?bool $forTrade = null,
         public readonly ?array $ids = null,
         public readonly ?bool $isPopular = null,
         public readonly ?bool $isWeaponAndGear = null,
