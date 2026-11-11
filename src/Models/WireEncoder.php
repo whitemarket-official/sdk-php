@@ -24,7 +24,7 @@ final class WireEncoder
      *
      * @return ($value is null ? null : E)
      *
-     * @throws \InvalidArgumentException the schema has no such value (for example `DealStatus::Queued`)
+     * @throws \InvalidArgumentException the wire enum has no such value
      */
     public function enum(string $wire, ?\BackedEnum $value): ?\BackedEnum
     {
@@ -39,7 +39,7 @@ final class WireEncoder
      *
      * @return list<E>|null
      *
-     * @throws \InvalidArgumentException the schema has no such value (for example `DealStatus::Queued`)
+     * @throws \InvalidArgumentException the wire enum has no such value
      */
     public function enumList(string $wire, ?array $values): ?array
     {

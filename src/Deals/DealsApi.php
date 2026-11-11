@@ -150,7 +150,7 @@ final readonly class DealsApi
      *
      * @return list<Deal>
      *
-     * @throws \InvalidArgumentException a status the API schema does not accept (`DealStatus::Queued`)
+     * @throws \InvalidArgumentException a status the API schema does not accept
      * @throws WhiteMarketException
      */
     public function listAsBuyer(?array $statusesWith = null, ?array $statusesWithout = null): array
@@ -166,7 +166,7 @@ final readonly class DealsApi
      *
      * @return list<Deal>
      *
-     * @throws \InvalidArgumentException a status the API schema does not accept (`DealStatus::Queued`)
+     * @throws \InvalidArgumentException a status the API schema does not accept
      * @throws WhiteMarketException
      */
     public function listAsSeller(?array $statusesWith = null, ?array $statusesWithout = null): array
@@ -404,7 +404,7 @@ final readonly class DealsApi
      *
      * @return list<Wire\MarketDealStatus>|null
      *
-     * @throws \InvalidArgumentException a status the API schema does not accept (`DealStatus::Queued`)
+     * @throws \InvalidArgumentException a status the API schema does not accept
      */
     private function statusFilter(?array $statuses): ?array
     {

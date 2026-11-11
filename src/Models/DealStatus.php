@@ -12,7 +12,7 @@ enum DealStatus: string
 {
     case Hold = 'HOLD';
     case Initiated = 'INITIATED';
-    /** Absent from the public schema; treated as in progress if the server sends it (WHITEMARKET_API.md 4). */
+    /** Waiting to send the trade offer; in progress (WHITEMARKET_API.md 4). */
     case Queued = 'QUEUED';
     case SellerSendingSteamOffer = 'SELLER_SENDING_STEAM_OFFER';
     case WaitingSteamQueue = 'WAITING_STEAM_QUEUE';

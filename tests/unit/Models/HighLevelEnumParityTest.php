@@ -102,14 +102,6 @@ final class HighLevelEnumParityTest extends TestCase
     }
 
     /**
-     * High-level-only values, deliberately absent from the schema: the SDK can read them but never send them
-     * (`WireEncoder` refuses). An entry here is a decision, not a convenience.
-     *
-     * @var array<class-string<\BackedEnum>, list<string>>
-     */
-    private const READ_ONLY_VALUES = [DealStatus::class => ['QUEUED']];
-
-    /**
      * @param class-string<\BackedEnum> $highLevel
      * @param class-string<\BackedEnum> $generated
      */
@@ -119,9 +111,6 @@ final class HighLevelEnumParityTest extends TestCase
     {
         $missing = [];
         foreach ($highLevel::cases() as $case) {
-            if (\in_array($case->value, self::READ_ONLY_VALUES[$highLevel] ?? [], true)) {
-                continue;
-            }
             if ($generated::tryFrom((string) $case->value) === null) {
                 $missing[] = $case->value;
             }
@@ -129,13 +118,6 @@ final class HighLevelEnumParityTest extends TestCase
 
         self::assertSame([], $missing);
         self::assertNotSame([], $highLevel::cases());
-    }
-
-    #[Test]
-    public function dealStatusQueuedIsTheOnlyValueTheSchemaLacks(): void
-    {
-        self::assertNotNull(DealStatus::tryFrom('QUEUED'));
-        self::assertNull(Wire\MarketDealStatus::tryFrom('QUEUED'));
     }
 
     #[Test]

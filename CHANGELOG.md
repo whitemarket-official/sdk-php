@@ -8,6 +8,19 @@ While the version is `0.x`, a minor release (`0.2.0`) may contain breaking chang
 
 ## [Unreleased]
 
+### Added
+
+- `DealCancelReason::InstantExchangeFailed` and seven `TransactionReason::InstantExchange*` cases (transfer, refund
+  and hold release, each in and out). These values entered the public partner schema on 2026-11-10; before this
+  release they arrived as `UnknownEnumValue`.
+- Generated layer: `MarketProductState::AVAILABLE_FOR_TRADE` and the optional input field
+  `MarketProductSearchInput::$forTrade`. `ProductFilter` does not expose `forTrade` yet.
+
+### Changed
+
+- `DealStatus::Queued` can now be passed in the status filters of `deals()->listAsBuyer()` and
+  `deals()->listAsSeller()`. Before, the SDK threw `InvalidArgumentException` because the schema did not accept it.
+
 ## [0.1.0] - 2026-11-02
 
 First public release of the PHP SDK for the WhiteMarket partner API.
