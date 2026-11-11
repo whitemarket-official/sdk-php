@@ -1,0 +1,149 @@
+name: Dependency audit
+
+# Daily composer audit of every lock file. When an advisory has a fixed version allowed by the constraints, the
+# affected packages (and what they need) are updated in composer.lock and a PR is opened or updated. When no fixed
+# version exists, the run fails, so the failure notification reaches a human.
+on:
+  schedule:
+    - cron: '41 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-audit
+  cancel-in-progress: false
+
+jobs:
+  # Holds a read-only token. composer update runs with --no-install --no-plugins --no-scripts, so no dependency code
+  # executes; the write token lives in open-pr, which applies the lock-file patch as data.
+  audit:
+    name: Audit lock files, update affected packages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.fix.outputs.changed }}
+      remaining: ${{ steps.fix.outputs.remaining }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # config.platform.php in composer.json pins resolution to the lowest supported PHP, whatever runs Composer.
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          coverage: none
+          tools: composer:2.11.0
+
+      - name: Audit and update
+        id: fix
+        run: |
+          mkdir -p "$RUNNER_TEMP/dependency-audit"
+          report="$RUNNER_TEMP/dependency-audit/report.md"
+          : > "$report"
+          remaining=false
+          for dir in . tools/infection; do
+            status=0
+            tools/github/audit-fix.sh "$dir" "$report" || status=$?
+            case "$status" in
+              0) ;;
+              1) remaining=true ;;
+              *) exit "$status" ;;
+            esac
+          done
+          echo "remaining=$remaining" >> "$GITHUB_OUTPUT"
+          if git diff --quiet -- composer.lock tools/infection/composer.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Write PR body and patch
+        if: steps.fix.outputs.changed == 'true'
+        env:
+          REMAINING: ${{ steps.fix.outputs.remaining }}
+        run: |
+          out="$RUNNER_TEMP/dependency-audit"
+          {
+            echo "Automated security update: \`composer audit\` found advisories with a fixed version, so the affected"
+            echo "packages were updated in the lock files (\`composer update <packages> --with-all-dependencies\`)."
+            echo
+            if [ "$REMAINING" = "true" ]; then
+              echo "> **Some advisories remain** (no fixed version allowed by the constraints); see below."
+              echo
+            fi
+            cat "$out/report.md"
+            echo "### Reviewer checklist"
+            echo
+            echo "- [ ] CI is green (if it did not start, close and reopen the PR or re-run it by hand)."
+            echo "- [ ] Only lock files changed; any new runtime package still needs an ADR (CLAUDE.md rule 10)."
+          } > "$out/pr-body.md"
+          git diff --binary -- composer.lock tools/infection/composer.lock > "$out/changes.patch"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.fix.outputs.changed == 'true'
+        with:
+          name: dependency-audit
+          path: ${{ runner.temp }}/dependency-audit/
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Fail on advisories without a fix
+        if: steps.fix.outputs.remaining == 'true'
+        run: |
+          echo "::error::composer audit reports advisories that composer update could not fix; see the job summary"
+          exit 1
+
+  open-pr:
+    name: Open PR
+    needs: audit
+    # Runs also when audit failed on unfixable advisories, as long as some lock file did change.
+    if: always() && needs.audit.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dependency-audit
+          path: ${{ runner.temp }}/dependency-audit
+
+      # The patch is data: git apply writes files, nothing from it runs. Any path other than the lock files fails the job.
+      - name: Apply the patch
+        run: |
+          git apply --binary "$RUNNER_TEMP/dependency-audit/changes.patch"
+          unexpected=$(git status --porcelain --untracked-files=all | cut -c4- \
+            | grep -vxE 'composer\.lock|tools/infection/composer\.lock' || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::the patch touches paths other than the lock files"
+            echo "$unexpected"
+            exit 1
+          fi
+
+      # PRs opened with the default GITHUB_TOKEN do not trigger the CI workflow (peter-evans/create-pull-request
+      # docs, "Triggering further workflow runs"). SCHEMA_SYNC_TOKEN (GitHub App or fine-grained PAT with
+      # contents + pull-requests write on this repository) makes CI run on the PR; without it, CI must be re-run by hand.
+      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.SCHEMA_SYNC_TOKEN || github.token }}
+          branch: dependency-audit/auto
+          base: main
+          delete-branch: true
+          commit-message: 'fix(deps): update packages with security advisories'
+          title: 'fix(deps): update packages with security advisories'
+          body-path: ${{ runner.temp }}/dependency-audit/pr-body.md
+          labels: dependencies
+          add-paths: |
+            composer.lock
+            tools/infection/composer.lock
