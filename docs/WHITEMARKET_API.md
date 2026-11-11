@@ -36,7 +36,8 @@ Introspection details [observed 2026-10-30]:
 - `__Type.specifiedByURL` is not supported (`Cannot query field "specifiedByURL" on type "__Type"`).
 - The anonymous schema is the public one and the SDK is generated from it. An earlier snapshot showed more values
   (`Currency` crypto values and `WMD`, `MarketDealStatus.QUEUED`, `MarketProductState.AVAILABLE_FOR_TRADE`,
-  `INSTANT_EXCHANGE*` reasons, `MarketProductSearchInput.forTrade`); they are absent from the public schema.
+  `INSTANT_EXCHANGE*` reasons, `MarketProductSearchInput.forTrade`). All but the `Currency` values entered the public
+  schema on 2026-11-10 [observed, schema sync, `schema/CHANGES.md`]; the `Currency` values are still absent.
   If the server sends such a value at runtime, the SDK maps it to the unknown variant (rule: unknown is not an error).
 - The description of `AuthTokens.accessToken` contains an example JWT. The schema fetch script replaces JWT-shaped
   strings in descriptions with `<JWT>`: repositories never contain tokens.
@@ -202,15 +203,15 @@ Shared types [schema]:
 
 | Group | Statuses | Meaning for the SDK |
 |---|---|---|
-| in progress | `HOLD INITIATED SELLER_SENDING_STEAM_OFFER WAITING_STEAM_QUEUE BUYER_CANCEL_REQUESTED OFFERED BUYER_OFFERED SELLER_OFFERED NEED_CONFIRMATION` | keep waiting |
+| in progress | `HOLD INITIATED QUEUED SELLER_SENDING_STEAM_OFFER WAITING_STEAM_QUEUE BUYER_CANCEL_REQUESTED OFFERED BUYER_OFFERED SELLER_OFFERED NEED_CONFIRMATION` | keep waiting |
 | exchanged, protected | `EXCHANGED` | items moved in Steam. If `isTradeProtected = true`, Steam Trade Protection applies: wait until `settlementTimeAt` for `COMPLETED`. The deal can still be rolled back during protection |
 | success, final | `COMPLETED` | funds settled |
 | failed, final | `CANCELLED BUYER_CANCELLED SELLER_CANCELLED EXPIRED BUYER_EXPIRED SELLER_EXPIRED EXPIRING` | no trade. `EXPIRING` is a transitional state that always ends in an expired status |
 | reversed, final | `STEAM_ROLLBACK BUYER_STEAM_ROLLBACK SELLER_STEAM_ROLLBACK` | trade was reverted by Steam after exchange; see `reversePenaltyValue`, `reverseRefundValue` |
 
 Unknown status values (server adds a new one) must map to an `UNKNOWN`/unrecognized variant, not crash.
-`QUEUED` (waiting to send the trade offer) was in an earlier schema snapshot and is absent from the public schema;
-treat it as in progress if it arrives.
+`QUEUED` (waiting to send the trade offer, schema description) is in the public schema since 2026-11-10
+[observed, schema sync]; it is in progress.
 
 Where a deal lives: `deal_item` returns deals that are still in progress; after finishing, a deal moves to history,
 read it with `deal_history_item` [docs] 5-skins-buy/buying-skin. `deal_buyer_statuses` accepts both and is the cheap

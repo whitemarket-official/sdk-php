@@ -304,8 +304,8 @@ Rules for `deals`:
 5. Every `until` predicate also matches a final status (`isFinal`), so a wait never outlives a failed or reversed deal
    and the caller checks the status of the returned state. Consequence: `completed` and `final` match the same states
    (`COMPLETED` is final).
-6. `QUEUED` is not in the public schema: it can be read (`DealStatus.QUEUED`) but not sent in a status filter; the SDK
-   rejects it client-side before any request.
+6. `QUEUED` (waiting to send the trade offer, in progress) is in the public schema since 2026-11-10: it is read and
+   sent in a status filter like any other status. Before that the SDK rejected it client-side.
 7. A requested key matches a state when it is UUID-shaped and equals the state's `id` without regard to case (RFC
    9562), or equals the state's `customId` exactly (a customId is a free-form `String`, WHITEMARKET_API.md 4: folding
    its case could attribute one deal's state to another whose customId differs only in case). Deduplication for

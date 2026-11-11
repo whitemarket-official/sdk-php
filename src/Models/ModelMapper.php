@@ -32,7 +32,7 @@ use WhiteMarket\Sdk\Wallet\Withdrawal;
  * they are checked at run time against the shape of the one implementation this SDK knows (`CSGOInventoryItem`,
  * `CSGOSteamItem`), and anything else maps to null, so an item type the server adds later never throws.
  *
- * Enums are matched by their wire value, so a high-level enum may know a value the schema snapshot lacks (`QUEUED`)
+ * Enums are matched by their wire value, so a high-level enum may know a value the schema snapshot lacks
  * and a value neither knows stays an {@see UnknownEnumValue} (CLAUDE.md rule 5).
  *
  * `dealState()` takes its class: `MarketDealState` is selected by one operation only.

@@ -12,6 +12,7 @@ use WhiteMarket\Sdk\Generated\Enum as Wire;
 use WhiteMarket\Sdk\Generated\Input\DateTimeRangeInput;
 use WhiteMarket\Sdk\Models\App;
 use WhiteMarket\Sdk\Models\Currency;
+use WhiteMarket\Sdk\Models\DealCancelReason;
 use WhiteMarket\Sdk\Models\DealStatus;
 use WhiteMarket\Sdk\Models\Decimal;
 use WhiteMarket\Sdk\Models\Money;
@@ -60,17 +61,17 @@ final class WireEncoderTest extends TestCase
     #[Test]
     public function refusesAnEnumValueTheSchemaDoesNotAccept(): void
     {
-        $this->expectExceptionObject(new \InvalidArgumentException('DealStatus value QUEUED cannot be sent: the API schema does not accept it.'));
+        $this->expectExceptionObject(new \InvalidArgumentException('DealCancelReason value NO_FUNDS cannot be sent: the API schema does not accept it.'));
 
-        (new WireEncoder())->enum(Wire\MarketDealStatus::class, DealStatus::Queued);
+        (new WireEncoder())->enum(Wire\MarketDealStatus::class, DealCancelReason::NoFunds);
     }
 
     #[Test]
     public function refusesAListWithAnEnumValueTheSchemaDoesNotAccept(): void
     {
-        $this->expectExceptionObject(new \InvalidArgumentException('DealStatus value QUEUED cannot be sent: the API schema does not accept it.'));
+        $this->expectExceptionObject(new \InvalidArgumentException('DealCancelReason value NO_FUNDS cannot be sent: the API schema does not accept it.'));
 
-        (new WireEncoder())->enumList(Wire\MarketDealStatus::class, [DealStatus::Offered, DealStatus::Queued]);
+        (new WireEncoder())->enumList(Wire\MarketDealStatus::class, [DealStatus::Offered, DealCancelReason::NoFunds]);
     }
 
     #[Test]

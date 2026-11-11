@@ -18,6 +18,7 @@ enum DealCancelReason: string
     case BuyerTooManyFailedAttempts = 'BUYER_TOO_MANY_FAILED_ATTEMPTS';
     case BuyerTradeUrlInvalid = 'BUYER_TRADE_URL_INVALID';
     case CancelByAdmin = 'CANCEL_BY_ADMIN';
+    case InstantExchangeFailed = 'INSTANT_EXCHANGE_FAILED';
     case Internal = 'INTERNAL';
     case NoFunds = 'NO_FUNDS';
     case SellerApikeyInvalid = 'SELLER_APIKEY_INVALID';

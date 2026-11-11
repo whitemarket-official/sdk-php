@@ -546,29 +546,24 @@ final class DealsApiTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, bool}> method, whether the rejected status is in the "with" list
+     * `QUEUED` entered the public schema on 2026-11-10 (schema/CHANGES.md); before that the SDK refused to send it.
+     *
+     * @param class-string $namespace
      */
-    public static function queuedFilters(): iterable
-    {
-        yield 'buyer, in statusesWith' => ['listAsBuyer', true];
-        yield 'buyer, in statusesWithout' => ['listAsBuyer', false];
-        yield 'seller, in statusesWith' => ['listAsSeller', true];
-        yield 'seller, in statusesWithout' => ['listAsSeller', false];
-    }
-
     #[Test]
-    #[DataProvider('queuedFilters')]
-    public function listsRejectAStatusTheSchemaDoesNotAcceptBeforeAnyRequest(string $method, bool $inWith): void
+    #[DataProvider('lists')]
+    public function listsSendTheQueuedStatusInEitherFilter(string $method, string $operation, string $namespace): void
     {
-        [$api, $http] = $this->api(new FakeHttpClient());
+        $empty = ['data' => [$method === 'listAsBuyer' ? 'deal_buyer_list' : 'deal_seller_list' => []]];
+        [$api, $http] = $this->api(new FakeHttpClient(FakeHttpClient::json($empty), FakeHttpClient::json($empty)));
 
-        try {
-            $this->list($api, $method, $inWith ? [DealStatus::Offered, DealStatus::Queued] : null, $inWith ? null : [DealStatus::Queued]);
-            self::fail('Expected an InvalidArgumentException');
-        } catch (\InvalidArgumentException $e) {
-            self::assertSame('DealStatus value QUEUED cannot be sent: the API schema does not accept it.', $e->getMessage());
-            self::assertCount(0, $http->requests());
-        }
+        $this->list($api, $method, [DealStatus::Offered, DealStatus::Queued]);
+        $this->list($api, $method, null, [DealStatus::Queued]);
+
+        self::assertSame([
+            [$operation, ['statusesWith' => ['OFFERED', 'QUEUED']]],
+            [$operation, ['statusesWithout' => ['QUEUED']]],
+        ], $http->operations(sortVariables: true));
     }
 
     // ---- history -----------------------------------------------------------------------------------------------
