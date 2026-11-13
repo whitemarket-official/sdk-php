@@ -523,3 +523,21 @@ Status: implemented in PHP (owner decision, 2026-11-02); merged into SDK_SPEC 3.
   `maxPriceInput` too; null sends nothing. Same currency validation as `buyCheapest`.
 - Why: a listing's price can change between reading it and buying it; without a cap the purchase takes whatever price
   holds at that moment.
+
+## P25. Section 1.3 transport: redirects of GraphQL, auth and live requests
+
+Status: implemented in PHP (0.1.0, `GuzzleClientFactory` `allow_redirects => false`, ADR 0002); approved by the owner
+2026-11-13 and merged into SDK_SPEC 1.3 so the sister SDKs get the rule.
+
+- Fact [observed, PHP `tests/unit/Transport/GuzzleClientFactoryTest.php`]: a client that follows a redirect to another
+  host resends the request there; Guzzle's cross-host stripping drops `Authorization` but keeps `X-partner-token`.
+  The PHP default clients send nothing to the redirect target.
+- Before: 1.3 is silent about redirects; only export GETs have a redirect rule (3.10 rule 2). Several default clients
+  of the sister languages follow redirects unless told otherwise (Go `net/http`, `fetch`, `reqwest`, `HttpClient`)
+  [memory: verify per language against its docs before relying on it].
+- After (1.3 bullet "Redirects"): the default client never follows a redirect on GraphQL and `auth_*` requests or the
+  live SSE GET; a 3xx is an `HttpError(status)`, not retried. Only export GETs follow redirects (3.10). The SDK
+  documents that an injected client must not follow redirects either.
+- Why: the credential headers must never reach a host other than the base URL (section 8). A redirected POST is also a
+  resent mutation (1.4).
+- Not covered: the WebSocket handshake (a non-101 answer); left to each SDK's WebSocket library and its tests.
