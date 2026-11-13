@@ -87,6 +87,11 @@ Real limits are checked by an opt-in live smoke test (8.3), because the server's
 - Headers: `Content-Type: application/json`, `Accept: application/json`, `Accept-Encoding: gzip`,
   `User-Agent: whitemarket-sdk-<lang>/<version> (<runtime>/<runtime version>)`, `Authorization: Bearer ...`
   (or `X-partner-token` for `auth_token` only).
+- Redirects: the default client never follows a redirect on GraphQL and `auth_*` requests or the live SSE GET; a 3xx
+  answer is an `HttpError(status)` and is not retried. Only export GETs follow redirects, under the rules of 3.10.
+  The SDK documents that an injected client must not follow redirects either: a client that follows a cross-host
+  redirect may resend the credential (Guzzle's own cross-host stripping drops `Authorization` but keeps
+  `X-partner-token` [observed, PHP `tests/unit/Transport/GuzzleClientFactoryTest.php`]).
 - Timeouts: connect 10 s, request 30 s (configurable). Export downloads: no total timeout, idle timeout 60 s.
 - Cancellation: Go `context.Context`, C# `CancellationToken`, JS/TS `AbortSignal`, Python `asyncio` cancellation / timeout,
   Rust futures drop, PHP timeouts only.
