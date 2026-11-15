@@ -14,6 +14,9 @@ Read on demand, not every session:
 Sister SDKs (same spec, same public API, idiomatic per language): `../whitemarket_sdk_php` (reference implementation),
 `../whitemarket_sdk_golang`, `../whitemarket_sdk_js`, `../whitemarket_sdk_ts`, `../whitemarket_sdk_python`,
 `../whitemarket_sdk_csharp`, `../whitemarket_sdk_rust`. Read them for parity; never edit them from this repo's session.
+One exception (owner decision 2026-11-15): the files listed in `.claude/shared-docs.conf` are copied byte-identical over
+the same path in every sister repo when the `shared-docs-sync.sh` Stop hook asks; look at the target first (it must
+hold nothing the source lacks, else stop and report), copy only those files, touch nothing else there.
 
 ## Communication
 
