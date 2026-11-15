@@ -130,9 +130,25 @@ final class MessageDecoder
         return new ConnectReply(
             $optionalInt($connect['ping'] ?? null, $path . '.ping'),
             Decode::bool($connect['pong'] ?? false, $path . '.pong'),
-            $optionalInt($connect['ttl'] ?? null, $path . '.ttl'),
+            self::ttl($connect['ttl'] ?? null, $path . '.ttl'),
             Decode::bool($connect['expires'] ?? false, $path . '.expires'),
             $channels,
         );
+    }
+
+    /**
+     * A ttl is a JSON integer. `JSON_BIGINT_AS_STRING` turns an integer beyond 64 bits into its digit string only; that
+     * string saturates to the int range. A digit string within the int range is a JSON string literal and is refused.
+     *
+     * @throws DecodeException
+     */
+    private static function ttl(mixed $value, string $path): ?int
+    {
+        if (\is_string($value) && preg_match('/^-?[1-9]\d*$/D', $value) === 1 && (string) (int) $value !== $value) {
+            // Without leading zeros an in-range digit string survives the cast unchanged; one beyond the range does not.
+            return str_starts_with($value, '-') ? \PHP_INT_MIN : \PHP_INT_MAX;
+        }
+
+        return Decode::nullableOf(Decode::int(...))($value, $path);
     }
 }

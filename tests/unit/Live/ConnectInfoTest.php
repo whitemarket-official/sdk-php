@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Tests\Unit\Live;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use WhiteMarket\Sdk\Errors\TransportException;
@@ -48,6 +49,38 @@ final class ConnectInfoTest extends TestCase
         self::assertSame(310.0, $info->idleSeconds());
         self::assertSame(300, ConnectInfo::fromReply(new ConnectReply(300, false, null, false, []))->ping);
         self::assertSame(300, ConnectInfo::fromReply(new ConnectReply(301, false, null, false, []))->ping);
+    }
+
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function connectTtls(): iterable
+    {
+        $huge = '1' . str_repeat('0', 400);
+
+        yield 'the maximum' => ['31536000', 31536000];
+        yield 'one above the maximum' => ['31536001', 31536000];
+        yield 'beyond 64 bits' => [$huge, 31536000];
+        yield 'negative beyond 64 bits' => ['-' . $huge, 0];
+        yield 'negative' => ['-1', 0];
+        yield 'zero' => ['0', 0];
+        yield 'one' => ['1', 1];
+    }
+
+    #[Test]
+    #[DataProvider('connectTtls')]
+    public function clampsTheConnectTtlToZeroAndOneYearOnBothTransports(string $literal, int $expected): void
+    {
+        $body = '"connect":{"ping":25,"pong":true,"expires":true,"ttl":' . $literal . ',"subs":{}}';
+
+        self::assertSame($expected, ConnectInfo::fromFirstMessage('{' . $body . '}')->ttl, 'SSE shape');
+        self::assertSame($expected, ConnectInfo::fromFirstMessage('{"id":1,' . $body . '}', 1)->ttl, 'WS shape');
+    }
+
+    #[Test]
+    public function aTtlWithoutExpiresStaysDroppedEvenWhenHuge(): void
+    {
+        self::assertNull(ConnectInfo::fromFirstMessage('{"connect":{"expires":false,"ttl":1' . str_repeat('0', 400) . '}}')->ttl);
     }
 
     #[Test]

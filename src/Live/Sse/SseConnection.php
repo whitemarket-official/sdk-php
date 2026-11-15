@@ -8,11 +8,16 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use WhiteMarket\Sdk\Auth\Secret;
+use WhiteMarket\Sdk\Errors\DecodeException;
 use WhiteMarket\Sdk\Errors\HttpException;
 use WhiteMarket\Sdk\Errors\TransportException;
 use WhiteMarket\Sdk\Live\ConnectInfo;
 use WhiteMarket\Sdk\Live\Connection;
 use WhiteMarket\Sdk\Live\LiveOptions;
+use WhiteMarket\Sdk\Live\Protocol\ConnectReply;
+use WhiteMarket\Sdk\Live\Protocol\Disconnect;
+use WhiteMarket\Sdk\Live\Protocol\MessageDecoder;
+use WhiteMarket\Sdk\Live\ServerClosed;
 use WhiteMarket\Sdk\Transport\BodyReader;
 use WhiteMarket\Sdk\Transport\ClientFailure;
 use WhiteMarket\Sdk\Transport\ClientResponse;
@@ -34,6 +39,10 @@ use WhiteMarket\Sdk\Transport\SystemClock;
  * therefore overrun its deadline by up to one slice. With a client without a read timeout a read blocks until data
  * comes. The request asks for `Accept-Encoding: identity`, so a compressed response is a protocol error.
  *
+ * The connect reply is not always the first event: the server sends publications before it. {@see open()} keeps every
+ * message that comes before the reply as raw text (bounded by its total size, not by a count) and {@see read()}
+ * returns them first, in order, as if they had come after the reply. {@see close()} drops the undelivered ones.
+ *
  * The token travels in the URL: the URL, the request and the client's exceptions never reach a message, a log or a
  * chained exception (the exception of the client is dropped, as everywhere in the transport).
  *
@@ -43,11 +52,21 @@ final class SseConnection implements Connection
 {
     private const SLICE_BYTES = 8192;
 
+    /**
+     * The live buffer budget, SDK_SPEC 3.11: the total text of the messages kept before the connect reply.
+     */
+    private const EARLY_TEXT_BYTES = 64 * 1024 * 1024;
+
     private ?ClientResponse $response = null;
 
     private ?ClientStream $body = null;
 
     private ?SseLineParser $parser = null;
+
+    /**
+     * @var \SplQueue<string> raw messages that came before the connect reply, not yet returned by {@see read()}
+     */
+    private \SplQueue $early;
 
     public function __construct(
         private readonly ClientInterface $client,
@@ -55,7 +74,10 @@ final class SseConnection implements Connection
         private readonly string $baseUrl,
         private readonly LiveOptions $options,
         private readonly Clock $clock = new SystemClock(),
-    ) {}
+        private readonly int $earlyTextBytes = self::EARLY_TEXT_BYTES,
+    ) {
+        $this->early = new \SplQueue();
+    }
 
     /**
      * @throws HttpException on a non-2xx status (the session decides what to do with it)
@@ -77,11 +99,50 @@ final class SseConnection implements Connection
             $this->body = $response->body();
             $this->parser = new SseLineParser($this->options->maxMessageBytes);
 
-            return ConnectInfo::fromFirstMessage($this->read(max(0.0, $until - microtime(true))));
+            return $this->awaitConnectReply($until);
         } catch (\Throwable $e) {
             $this->close();
 
             throw $e;
+        }
+    }
+
+    /**
+     * Reads until the connect reply; every other message is kept for {@see read()}.
+     *
+     * @throws ServerClosed when the server disconnects before the reply
+     * @throws TransportException
+     */
+    private function awaitConnectReply(float $until): ConnectInfo
+    {
+        $early = new \SplQueue();
+        $keptBytes = 0;
+        while (true) {
+            $raw = $this->read(max(0.0, $until - microtime(true)));
+            if ($raw === null) {
+                throw new TransportException('The live connection sent no connect reply in time.');
+            }
+
+            try {
+                $message = MessageDecoder::decode($raw);
+            } catch (DecodeException) {
+                // Reported by the session when it reads the message, as for any message after the reply.
+                $message = null;
+            }
+            if ($message instanceof ConnectReply) {
+                $this->early = $early;
+
+                return ConnectInfo::fromReply($message);
+            }
+            if ($message instanceof Disconnect) {
+                throw new ServerClosed($message->code, $message->reason);
+            }
+
+            $keptBytes += \strlen($raw);
+            if ($keptBytes > $this->earlyTextBytes) {
+                throw new TransportException('The live stream sent too much data before the connect reply.');
+            }
+            $early->enqueue($raw);
         }
     }
 
@@ -96,6 +157,9 @@ final class SseConnection implements Connection
         $parser = $this->parser;
         if (!$body instanceof ClientStream || !$parser instanceof SseLineParser) {
             throw new TransportException('The live connection is not open.');
+        }
+        if (!$this->early->isEmpty()) {
+            return $this->early->dequeue();
         }
 
         while (true) {
@@ -148,6 +212,7 @@ final class SseConnection implements Connection
         $this->response = null;
         $this->body = null;
         $this->parser = null;
+        $this->early = new \SplQueue();
         if (!$response instanceof ClientResponse) {
             return;
         }
@@ -191,12 +256,19 @@ final class SseConnection implements Connection
         }
         // Forced objects: "subs" and every channel option are JSON objects, also when empty.
         $connect = json_encode(['token' => $token->reveal(), 'subs' => $subs], \JSON_THROW_ON_ERROR | \JSON_FORCE_OBJECT);
-        $url = rtrim($this->baseUrl, '/') . $this->options->ssePath . '?cf_connect=' . rawurlencode($connect);
 
-        return $this->requestFactory->createRequest('GET', $url)
+        return $this->requestFactory->createRequest('GET', self::url($this->baseUrl, $this->options->ssePath, $connect))
             ->withHeader('Accept', 'text/event-stream')
             ->withHeader('Accept-Encoding', 'identity')
             ->withHeader('User-Agent', $this->options->userAgent());
+    }
+
+    /**
+     * The URL of one connect: the endpoint with the connect command (JSON) in `cf_connect`.
+     */
+    public static function url(string $baseUrl, string $ssePath, #[\SensitiveParameter] string $connect): string
+    {
+        return rtrim($baseUrl, '/') . $ssePath . '?cf_connect=' . rawurlencode($connect);
     }
 
     private function statusFailure(#[\SensitiveParameter] ClientResponse $response, int $status): HttpException

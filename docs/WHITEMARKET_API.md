@@ -102,6 +102,10 @@ The glossary calls the 401 header "Authentication"; the authorization page and e
 Rules for the SDK:
 
 - `auth_token` is rate limited server-side [server]. Calling it per request will get the partner throttled.
+  The refusal [observed 2026-11-15, Python SDK examples, about 10 exchanges in 18 s from separate processes] is HTTP
+  200 with a GraphQL error at path `auth_token`, `extensions.category` `person.action_too_many_requests`, message
+  `❗️ Oops! Too many requests. Try again later.`, no `Retry-After`. Later exchanges were refused for about 5-50 s;
+  the exact window is unknown (backend question).
   Cache the access token until shortly before expiry. Use the JWT `exp` claim (decode the payload, do not verify
   the signature, the SDK has no key); if `exp` is missing or unparsable, assume 24 h from issue minus a safety margin.
 - Refresh is single-flight: concurrent callers wait for one refresh, never start N refreshes.
@@ -448,7 +452,12 @@ Generic Centrifugo behaviour; whether the WhiteMarket deployment matches each po
   the docs. Every scalar is a string; `instance_id` can be `"0"`.
 - Volume: about 250 product messages/s on WS, 2445 frames with more than one `\n`-separated message in 40 s; SSE
   delivered about 10k in 40 s. Server `{}` pings were rare (1-2 per 40 s) while data flowed.
-- SSE: every line was `data: {json}` (no other fields); the first event is the connect reply.
+- SSE: every line was `data: {json}` (no other fields). The connect reply is NOT always the first event
+  [observed 2026-11-15, Python SDK diagnostics, 20 sessions one after another, read-only]: in 10 of 20 sessions one
+  to three connects in a row got a publication (`{"channel": ..., "pub": ...}`, 300-1100 bytes) first and the
+  connect reply after it; the other connects got the reply first (265 bytes). In one later session more than 64
+  publications came before the reply (the Python SDK's default queue size, a count limit failed that connect). This contradicts the Centrifugo
+  uni_sse description above; the SDK must accept messages before the connect reply (SDK_SPEC 3.11).
 - SDK run through the PHP live module [observed 2026-11-01, `wss://` default and SSE, read-only]: WS 60 s ->
   1769 product events (added/edited/removed), SSE 30 s -> 9859, no decode or mapping errors, clean close. Volume
   varies strongly over time; no personal events (no deal activity during the run).

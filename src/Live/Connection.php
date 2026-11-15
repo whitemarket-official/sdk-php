@@ -21,9 +21,14 @@ interface Connection
      * Connects, authenticates with the token and subscribes to the channels; returns the server's connect reply.
      * `$timeout` is the seconds left for the whole connect; the connection counts them from the call.
      *
+     * The SSE connection keeps the messages that come before the connect reply and returns them from {@see read()}; the
+     * WebSocket one requires the connect reply to be the first message.
+     *
      * @param list<string> $channels
      *
-     * @throws TransportException when the connection cannot be established or the first message is not a connect reply
+     * @throws TransportException when the connection cannot be established, the stream ends or sends too much data
+     *                            before the connect reply, or (WebSocket) the first message is not a connect reply
+     * @throws ServerClosed when the server disconnects before the connect reply (SSE)
      * @throws ConnectRejected when the server answers the connect command with an error (WebSocket)
      */
     public function open(#[\SensitiveParameter] Secret $token, array $channels, float $timeout): ConnectInfo;

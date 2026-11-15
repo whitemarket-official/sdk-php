@@ -46,7 +46,7 @@ Option 2.
   the past or within the 5 minute margin therefore counts as expired, at any later read of the store too; such a token
   serves the request that asked for it and the next request exchanges again, instead of a 401 round trip. Before, a
   past `exp` gave 24 h, `exp - iat` alone set the lifetime, and every token was kept at least 10 minutes. All of it is in
-  whole seconds (JWT claims are), so the bounds hold to within 1 s of a sub-second clock.
+  whole seconds (JWT claims are), so the bounds hold to within 1 s of a sub-second clock. The clock is taken in UTC and rounded up to whole seconds for `exp - now`, and the expiry is the exact clock plus that lifetime (owner decision 2026-11-14): at most 1 s before `exp`, never after.
 - Attempt budget across the replay (2026-11-14, SDK_SPEC 1.4): the first send and the replay share one
   `Transport\AttemptBudget`, so a query sends at most `maxAttempts` requests plus the exchange; a 401 on the last
   attempt is still replayed once and that replay is not retried. Before, the replay started a fresh retry loop (up

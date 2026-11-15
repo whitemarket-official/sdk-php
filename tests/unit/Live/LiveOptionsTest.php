@@ -49,6 +49,13 @@ final class LiveOptionsTest extends TestCase
         yield 'ws path without slash' => [['wsPath' => 'ws']];
         yield 'ws path with query' => [['wsPath' => '/ws?x=1']];
         yield 'sse path with fragment' => [['ssePath' => '/sse#a']];
+        // SDK_SPEC 2: a bare trailing "#" is a fragment too, and the SSE path takes no query of its own (the SDK
+        // appends "?cf_connect=..."); PHP refuses the query at construction (docs/DEVIATIONS.md).
+        foreach (['ssePath', 'wsPath'] as $option) {
+            foreach (['/sse#', '/sse#x', '/sse?x=1', '/sse?'] as $path) {
+                yield \sprintf('%s %s', $option, $path) => [[$option => $path]];
+            }
+        }
         yield 'sse path with space' => [['ssePath' => '/s se']];
         yield 'sse path final line feed' => [['ssePath' => "/sse\n"]];
         yield 'zero connect timeout' => [['connectTimeout' => 0.0]];

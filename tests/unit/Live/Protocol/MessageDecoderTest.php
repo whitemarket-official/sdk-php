@@ -76,6 +76,29 @@ final class MessageDecoderTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function oversizeTtls(): iterable
+    {
+        yield 'one above int64' => ['9223372036854775808', \PHP_INT_MAX];
+        yield 'four hundred digits' => ['1' . str_repeat('0', 400), \PHP_INT_MAX];
+        yield 'one below int64' => ['-9223372036854775809', \PHP_INT_MIN];
+        yield 'negative four hundred digits' => ['-1' . str_repeat('0', 400), \PHP_INT_MIN];
+        yield 'int64 maximum stays an integer' => ['9223372036854775807', \PHP_INT_MAX];
+        yield 'int64 minimum stays an integer' => ['-9223372036854775808', \PHP_INT_MIN];
+    }
+
+    #[Test]
+    #[DataProvider('oversizeTtls')]
+    public function saturatesAConnectTtlBeyondSixtyFourBits(string $literal, int $expected): void
+    {
+        $reply = MessageDecoder::decode('{"connect":{"ttl":' . $literal . '}}');
+
+        self::assertInstanceOf(ConnectReply::class, $reply);
+        self::assertSame($expected, $reply->ttl);
+    }
+
+    /**
      * @return iterable<string, array{string}>
      */
     public static function connectReplies(): iterable
@@ -227,6 +250,18 @@ final class MessageDecoderTest extends TestCase
         yield 'connect not an object' => ['{"connect":5}', 'live.connect'];
         yield 'connect ping a string' => ['{"connect":{"ping":"25"}}', 'live.connect.ping'];
         yield 'connect ttl a float' => ['{"connect":{"ttl":1.5}}', 'live.connect.ttl'];
+        yield 'connect ttl a bool' => ['{"connect":{"ttl":true}}', 'live.connect.ttl'];
+        yield 'connect ttl a non-digit string' => ['{"connect":{"ttl":"abc"}}', 'live.connect.ttl'];
+        yield 'connect ttl a decimal string' => ['{"connect":{"ttl":"1.5"}}', 'live.connect.ttl'];
+        yield 'connect ttl an exponent string' => ['{"connect":{"ttl":"1e5"}}', 'live.connect.ttl'];
+        yield 'connect ttl an empty string' => ['{"connect":{"ttl":""}}', 'live.connect.ttl'];
+        yield 'connect ttl a signed string' => ['{"connect":{"ttl":"+5"}}', 'live.connect.ttl'];
+        yield 'connect ttl a trailing newline string' => ['{"connect":{"ttl":"5\\n"}}', 'live.connect.ttl'];
+        yield 'connect ttl a digit string literal' => ['{"connect":{"ttl":"5"}}', 'live.connect.ttl'];
+        yield 'connect ttl a zero-padded digit string literal' => ['{"connect":{"ttl":"0005"}}', 'live.connect.ttl'];
+        yield 'connect ttl a negative digit string literal' => ['{"connect":{"ttl":"-1"}}', 'live.connect.ttl'];
+        yield 'connect ttl an object' => ['{"connect":{"ttl":{}}}', 'live.connect.ttl'];
+        yield 'connect ping beyond 64 bits' => ['{"connect":{"ping":1' . str_repeat('0', 400) . '}}', 'live.connect.ping'];
         yield 'connect pong a number' => ['{"connect":{"pong":1}}', 'live.connect.pong'];
         yield 'connect expires a string' => ['{"connect":{"expires":"true"}}', 'live.connect.expires'];
         yield 'connect subs a scalar' => ['{"connect":{"subs":5}}', 'live.connect.subs'];

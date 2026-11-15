@@ -38,6 +38,7 @@ use WhiteMarket\Sdk\Tests\Support\FrozenClock;
 use WhiteMarket\Sdk\Tests\Support\ManualClock;
 use WhiteMarket\Sdk\Tests\Support\SyntheticProducts;
 use WhiteMarket\Sdk\Tests\Support\TestExport;
+use WhiteMarket\Sdk\Tests\Support\ThrowingRequestFactory;
 use WhiteMarket\Sdk\Tests\Support\TraceArguments;
 
 #[CoversClass(ExportClient::class)]
@@ -985,6 +986,16 @@ final class ExportClientTest extends TestCase
         self::assertSame('https://white.market/x?ref=abc', $client->affiliateLink('https://white.market/x', 'abc'));
         $this->expectException(\InvalidArgumentException::class);
         $client->affiliateLink('https://evil.example.test/x', 'abc');
+    }
+
+    #[Test]
+    public function createRefusesAnEndpointTheRequestFactoryCannotBuild(): void
+    {
+        $factory = ThrowingRequestFactory::refusingEvery('Unable to parse URI: https://export.white.market synthetic-token-5d1e');
+
+        $e = TraceArguments::caught(static fn(): ExportClient => ExportClient::create(httpClient: new FakeHttpClient(), requestFactory: $factory));
+
+        TraceArguments::assertOpaque($e, \InvalidArgumentException::class, 'baseUrl is not a valid URL.', 'synthetic-token-5d1e');
     }
 
     #[Test]

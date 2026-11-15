@@ -628,7 +628,8 @@ timeout), `maxBodyBytes` 64 MiB (decoded), `userAgentSuffix` null, `jsonStreamDe
 
 `LiveOptions` (passed to `$client->live()`): `transport` `LiveTransport::WebSocket` (or `Sse`), `wsPath` `/ws_endpoint`,
 `ssePath` `/sse_endpoint`, `connectTimeout` 10.0 s, `readSlice` 1 s, `maxMessageBytes` 1 MiB (1024 to 64 MiB),
-`maxReconnectAttempts` null (unlimited), `userAgentSuffix` null.
+`maxReconnectAttempts` null (unlimited), `userAgentSuffix` null. `ssePath` and `wsPath` take no query and no fragment
+(not even a bare trailing `#`): the SDK appends its own connect query (`?cf_connect=...`).
 
 ```php
 use WhiteMarket\Sdk\Transport\RetryPolicy;

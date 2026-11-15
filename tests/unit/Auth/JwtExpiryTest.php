@@ -48,6 +48,8 @@ final class JwtExpiryTest extends TestCase
         yield 'exp as an integer literal just below the integer range -> expired' => ['e30.' . rtrim(base64_encode('{"exp":-9223372036854775809}'), '=') . '.s', 0];
         yield 'exp overflowing to minus infinity -> expired' => ['e30.' . rtrim(base64_encode('{"exp":-1e400}'), '=') . '.s', 0];
         yield 'exp overflowing to plus infinity -> capped at 24 h' => ['e30.' . rtrim(base64_encode('{"exp":1e400}'), '=') . '.s', self::DAY];
+        yield 'exp as NaN -> 24 h' => ['e30.' . rtrim(base64_encode('{"exp":NaN}'), '=') . '.s', self::DAY];
+        yield 'exp as Infinity -> 24 h' => ['e30.' . rtrim(base64_encode('{"exp":Infinity}'), '=') . '.s', self::DAY];
         yield 'payload is a JSON scalar -> 24 h' => ['e30.' . rtrim(base64_encode('42'), '=') . '.s', self::DAY];
         yield 'payload is not JSON -> 24 h' => ['e30.' . rtrim(base64_encode('{exp:1}'), '=') . '.s', self::DAY];
         yield 'payload is not base64 -> 24 h' => ['e30.***.s', self::DAY];
@@ -78,5 +80,43 @@ final class JwtExpiryTest extends TestCase
         self::assertMatchesRegularExpression('/[-_]/', explode('.', $jwt)[1] ?? '');
 
         self::assertSame(self::NOW + 70, JwtExpiry::of($jwt, new \DateTimeImmutable('@' . self::NOW))->getTimestamp());
+    }
+
+    /**
+     * @return iterable<string, array{string, int, string}> clock, exp, expected expiry (UTC, with microseconds)
+     */
+    public static function subSecondClocks(): iterable
+    {
+        yield 'half a second into the second -> exp minus the missing half' => ['@150.5', 200, '199.500000'];
+        yield 'whole second -> exactly exp' => ['@150', 200, '200.000000'];
+        yield 'clock at 199.0 -> exp' => ['@199', 200, '200.000000'];
+        yield 'clock at 199.5 -> expired, expiry is the clock itself' => ['@199.5', 200, '199.500000'];
+        yield 'clock at 199.999999 -> expired' => ['@199.999999', 200, '199.999999'];
+        yield 'clock at 150.000001 -> exp minus 999999 us' => ['@150.000001', 200, '199.000001'];
+        yield 'before 1970, -1.5 -> rounds up to -1' => ['@-1.5', 9, '8.500000'];
+    }
+
+    #[Test]
+    #[DataProvider('subSecondClocks')]
+    public function roundsTheClockUpToWholeSecondsAndKeepsItsFraction(string $clock, int $exp, string $expected): void
+    {
+        $expiry = JwtExpiry::of(SyntheticJwt::withClaims(['exp' => $exp]), new \DateTimeImmutable($clock));
+
+        self::assertSame($expected, $expiry->format('U.u'));
+    }
+
+    #[Test]
+    public function givesTheSameInstantForAnyClockTimeZoneAndReturnsUtc(): void
+    {
+        // One second before the Berlin DST switch of 2026-03-29 (01:00:00 UTC); the lifetime crosses it.
+        $jwt = SyntheticJwt::withClaims(['exp' => 1_774_746_000 + 7200]); // clock rounds up to 1_774_746_000
+        $utcClock = new \DateTimeImmutable('2026-03-29T00:59:59.250000+00:00');
+        $berlinClock = $utcClock->setTimezone(new \DateTimeZone('Europe/Berlin'));
+
+        $fromBerlin = JwtExpiry::of($jwt, $berlinClock);
+
+        self::assertSame(JwtExpiry::of($jwt, $utcClock)->format('U.u'), $fromBerlin->format('U.u'));
+        self::assertSame('UTC', $fromBerlin->getTimezone()->getName());
+        self::assertSame('1774753199.250000', $fromBerlin->format('U.u'));
     }
 }
