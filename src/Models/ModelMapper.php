@@ -12,6 +12,7 @@ use WhiteMarket\Sdk\Generated\Fragment\PersonPublicFields;
 use WhiteMarket\Sdk\Generated\Operation\Query\DealBuyerStatuses\Result as DealStateResult;
 use WhiteMarket\Sdk\Profile\Profile;
 use WhiteMarket\Sdk\Profile\TradingCompetitionStat;
+use WhiteMarket\Sdk\Selling\BatchRowIdentity;
 use WhiteMarket\Sdk\Store\Achievement;
 use WhiteMarket\Sdk\Store\AchievementParam;
 use WhiteMarket\Sdk\Store\Store;
@@ -558,6 +559,25 @@ final class ModelMapper
         }
 
         return $this->isProduct($product) ? $this->product($product, $path) : null;
+    }
+
+    /**
+     * The identity of the `product` of a batch result, read from the raw row: no money, wear or enum is decoded, so it
+     * cannot fail on an unreadable price. Null for no product or a type the server added later.
+     */
+    public function batchIdentity(mixed $product): ?BatchRowIdentity
+    {
+        if ($this->isProductHistory($product)) {
+            return new BatchRowIdentity($product->id, true, null, null);
+        }
+        if (!$this->isProduct($product)) {
+            return null;
+        }
+        $item = $product->item;
+
+        return $this->isInventoryItem($item)
+            ? new BatchRowIdentity($product->id, false, $item->id, $item->assetId)
+            : new BatchRowIdentity($product->id, false, null, null);
     }
 
     /**

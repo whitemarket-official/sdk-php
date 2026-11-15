@@ -26,9 +26,9 @@ use WhiteMarket\Sdk\Models\PageRequest;
 use WhiteMarket\Sdk\Models\Paginator;
 use WhiteMarket\Sdk\Models\Uuid;
 use WhiteMarket\Sdk\Models\WireEncoder;
-use WhiteMarket\Sdk\Transport\Clock;
+use WhiteMarket\Sdk\Transport\MonotonicClock;
 use WhiteMarket\Sdk\Transport\Sleeper;
-use WhiteMarket\Sdk\Transport\SystemClock;
+use WhiteMarket\Sdk\Transport\SystemMonotonicClock;
 use WhiteMarket\Sdk\Transport\SystemSleeper;
 
 /**
@@ -59,17 +59,25 @@ final readonly class DealsApi
      */
     public const MAX_COMMENT_LENGTH = 255;
 
+    /**
+     * With a live session a deal event polls early, but never sooner than this many seconds after the previous poll
+     * began (SDK_SPEC 3.4): a burst of events must not cause back-to-back polls.
+     */
+    private const MIN_POLL_SPACING_SECONDS = 1.0;
+
     private const COMMENT_PATTERN = '/^[a-zA-Z0-9 _-]*$/D';
 
     /**
      * @internal built by {@see \WhiteMarket\Sdk\WhiteMarketClient}
+     *
+     * @param MonotonicClock $monotonic the time source of {@see waitFor()} (SDK_SPEC 3.4 rule 4)
      */
     public function __construct(
         private GeneratedClient $api,
         private ModelMapper $mapper,
-        private Clock $clock = new SystemClock(),
         private Sleeper $sleeper = new SystemSleeper(),
         private WireEncoder $wire = new WireEncoder(),
+        private MonotonicClock $monotonic = new SystemMonotonicClock(),
     ) {}
 
     /**
@@ -298,11 +306,12 @@ final readonly class DealsApi
      * deal the wait reads it with {@see get()} (`deal_item`, then the archive) and keeps doing so, one request per poll.
      * A deal the server does not report yet (a new deal may need a moment to become visible) counts as "not yet", and
      * so does a state `$until` rejects, including one with an unknown status. The wait does not end by itself when the
-     * deal reaches a final status unless `$until` accepts it; every {@see Until} predicate does. Elapsed time is read
-     * from the wall clock, so a clock change during the wait shifts the deadline.
+     * deal reaches a final status unless `$until` accepts it; every {@see Until} predicate does. Elapsed time and the
+     * deadline are measured with a monotonic clock, so a change of the system clock during the wait does not move them.
      *
      * With `$live` the call does not sleep between polls: it waits in `$live->poll()` instead (so the live handlers
-     * run meanwhile) and polls early when a deal event for the waited deal arrives. Any other event, product events
+     * run meanwhile) and polls early when a deal event for the waited deal arrives, but not before one second has passed since the previous
+     * poll began (the rest of that second it keeps serving the live handlers). Any other event, product events
      * included, neither triggers a poll nor shortens the interval. An exception thrown by a live handler (or a
      * terminal live failure) propagates out of this call. The timeout semantics are the same as without `$live`.
      *
@@ -330,9 +339,10 @@ final readonly class DealsApi
             throw new \InvalidArgumentException('The timeout must be null or a finite number of seconds, 0 or more.');
         }
 
-        $start = $this->nowInSeconds();
+        $start = $this->monotonic->seconds();
         $viaGet = false;
         while (true) {
+            $pollBegan = $this->monotonic->seconds();
             $last = null;
             if (!$viaGet) {
                 $last = array_values($this->statuses([$idOrCustomId]))[0] ?? null;
@@ -350,14 +360,14 @@ final readonly class DealsApi
             }
             $sleep = $pollInterval;
             if ($timeout !== null) {
-                $remaining = $timeout - ($this->nowInSeconds() - $start);
+                $remaining = $timeout - ($this->monotonic->seconds() - $start);
                 if ($remaining <= 0.0) {
                     throw new DealWaitTimeoutException($idOrCustomId, $last, $timeout);
                 }
                 $sleep = min($pollInterval, $remaining);
             }
             if ($live instanceof Live) {
-                $this->waitLive($live, $sleep, [$idOrCustomId, $last instanceof DealState ? $last->id : null]);
+                $this->waitLive($live, $sleep, [$idOrCustomId, $last instanceof DealState ? $last->id : null], $pollBegan);
             } else {
                 $this->sleeper->sleep($sleep);
             }
@@ -365,26 +375,47 @@ final readonly class DealsApi
     }
 
     /**
-     * Waits up to `$seconds` in `$live->poll()`; returns early on a deal event of one of `$dealIds`.
+     * Waits up to `$seconds` in `$live->poll()`; after a deal event of one of `$dealIds` returns once
+     * {@see MIN_POLL_SPACING_SECONDS} has passed since `$pollBegan` (a monotonic reading), still bounded by `$seconds`.
      *
      * @param list<?string> $dealIds the waited reference and the deal id once known (ids compare case-insensitively)
      */
-    private function waitLive(#[\SensitiveParameter] Live $live, float $seconds, array $dealIds): void
+    private function waitLive(#[\SensitiveParameter] Live $live, float $seconds, array $dealIds, float $pollBegan): void
     {
-        $end = $this->nowInSeconds() + $seconds;
-        while (($left = $end - $this->nowInSeconds()) > 0.0) {
-            $event = $live->poll(min($left, $seconds));
+        $end = $this->monotonic->seconds() + $seconds;
+        $earliestEarlyPoll = $pollBegan + self::MIN_POLL_SPACING_SECONDS;
+        $matched = false;
+        while (true) {
+            $now = $this->monotonic->seconds();
+            $target = $matched ? min($end, $earliestEarlyPoll) : $end;
+            if ($target - $now <= 0.0) {
+                return;
+            }
+            $event = $live->poll($target - $now);
             if ($event instanceof DealEvent) {
-                foreach ($dealIds as $id) {
-                    if ($id !== null && strcasecmp($id, $event->dealId) === 0) {
-                        return;
-                    }
+                $matched = $matched || $this->isWaitedDeal($event, $dealIds);
+            } elseif (!$event instanceof LiveEvent) {
+                $left = $target - $this->monotonic->seconds();
+                if ($left > 0.0) {
+                    // A closed session returns at once: sleep the rest instead of spinning.
+                    $this->sleeper->sleep($left);
                 }
-            } elseif (!$event instanceof LiveEvent && $end - $this->nowInSeconds() > 0.0) {
-                // A closed session returns at once: sleep the rest instead of spinning.
-                $this->sleeper->sleep($end - $this->nowInSeconds());
             }
         }
+    }
+
+    /**
+     * @param list<?string> $dealIds
+     */
+    private function isWaitedDeal(DealEvent $event, array $dealIds): bool
+    {
+        foreach ($dealIds as $id) {
+            if ($id !== null && strcasecmp($id, $event->dealId) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -471,10 +502,5 @@ final readonly class DealsApi
         }
 
         return $this->mapper->archivedDeal($this->api->dealHistoryItem(customId: $customId, id: $id), 'deal_history_item');
-    }
-
-    private function nowInSeconds(): float
-    {
-        return (float) $this->clock->now()->format('U.u');
     }
 }

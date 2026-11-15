@@ -89,7 +89,11 @@ Real limits are checked by an opt-in live smoke test (8.3), because the server's
   (or `X-partner-token` for `auth_token` only).
 - Redirects: the default client never follows a redirect on GraphQL and `auth_*` requests or the live SSE GET; a 3xx
   answer is an `HttpError(status)` and is not retried. Only export GETs follow redirects, under the rules of 3.10.
-  The SDK documents that an injected client must not follow redirects either: a client that follows a cross-host
+  Where the HTTP client API takes a per-request override, every SDK request (GraphQL, auth, export, SSE) turns
+  redirect following and client-level auth off per request, so an injected client cannot follow a redirect or add a
+  credential either (Python `follow_redirects=False`, `auth=None`; owner decision 2026-11-14). Where it does not (PHP
+  PSR-18 `sendRequest()` takes no options), the injected client is used as is and the SDK documents that it must
+  not follow redirects: a client that follows a cross-host
   redirect may resend the credential (Guzzle's own cross-host stripping drops `Authorization` but keeps
   `X-partner-token` [observed, PHP `tests/unit/Transport/GuzzleClientFactoryTest.php`]).
 - Timeouts: connect 10 s, request 30 s (configurable). Export downloads: no total timeout, idle timeout 60 s.
@@ -113,7 +117,10 @@ Backoff: exponential, base 500 ms, factor 2, cap 30 s, full jitter. A 429 or 503
 HTTP-date) is not retried: the SDK throws `RateLimitError` / `ServiceUnavailableError` with `retryAfter` at once and
 the caller decides when to try again (owner decision 2026-10-31); the SDK never waits for a server-chosen time. On
 other statuses the header is ignored. 401 on any request: refresh the access token once and replay once (also for mutations,
-because 401 means the request was rejected before execution).
+because 401 means the request was rejected before execution). The replay shares the call's attempt budget: a query
+sends at most `maxAttempts` requests in total, plus the token exchange; a 401 on the last attempt is still replayed
+once, and that replay is not retried (owner decision 2026-11-14). A mutation is sent at most twice: once, and once
+more after a 401.
 
 "Never" for mutations includes resends by the HTTP client library: a mutation is sent on a connection that is not
 reused and is closed afterwards, unless the library documents that it never resends a request on its own (libcurl
@@ -203,6 +210,14 @@ iterators, C# `IAsyncEnumerable<T>`, Rust `Stream<Item = Result<T>>`). Iterators
 | `auth.refresh()` | forces `auth_token` |
 | `auth.ping()` | `test_ping`, for connectivity checks |
 
+Token lifetime: `exp - now` by the local clock, but not more than `exp - iat` when `iat` is present, `iat >= 0` and
+`exp > iat`, and at most 24 h, so a cached token never outlives its `exp`. A non-integer NumericDate is rounded down, and
+one outside the language's 64-bit integer range (infinity included) is clamped to its end, so an `exp` far in the past
+is expired; a missing or non-numeric `exp` gives 24 h. A token whose `exp` is in the past or within the 5 min refresh margin of the
+local clock counts as expired: the SDK exchanges the Partner Token again before sending the next request instead of
+waiting for a 401 (owner decision 2026-11-14). A token just received is used for the request that asked for it, but is
+not served from the cache afterwards. Otherwise the token is refreshed 5 min before the end of its lifetime.
+
 ### 3.2 market (read)
 
 | Method | GraphQL |
@@ -268,6 +283,9 @@ Reconciliation rules (they refine the algorithm above):
    currency is validated as for `buyCheapest`. A listing's price can change between reading it and buying it; the cap
    makes the server refuse a dearer purchase (`market.product.not_found_in_specified_price`, a `GraphQLError`, no deal
    [observed 2026-11-02 with `id`; `appIdAssetIdInput` not tried]) instead of taking whatever price holds then.
+8. A deal found by a reconciliation lookup is accepted only when its `customId` equals the looked-up `customId`
+   exactly; a different or null `customId` counts as a failed lookup (rule 2) and the attempts continue (owner
+   decision 2026-11-14).
 
 `deliveryType` on `market_buy` is deprecated and not exposed.
 
@@ -305,7 +323,8 @@ Rules for `deals`:
 4. `waitFor` raises `DealWaitTimeoutError(idOrCustomId, lastState, timeout)` (not in 1.5). Default timeout: none. A
    deal the server does not report yet counts as "not yet" (a new deal needs a moment to become visible). The first
    poll is immediate; a timeout of 0 polls exactly once; `pollInterval` must be finite and > 0, `timeout` null or
-   finite and >= 0. Elapsed time is wall-clock. Waking up on live events (`opts.live`) is deferred to the live module.
+   finite and >= 0. Elapsed time and the deadline use a monotonic clock, so a change of the system clock does not move
+   them (owner decision 2026-11-14). Waking up on live events (`opts.live`) is deferred to the live module.
 5. Every `until` predicate also matches a final status (`isFinal`), so a wait never outlives a failed or reversed deal
    and the caller checks the status of the returned state. Consequence: `completed` and `final` match the same states
    (`COMPLETED` is final).
@@ -319,6 +338,8 @@ Rules for `deals`:
 8. `waitFor` caps the last sleep at the remaining timeout and polls once more at the deadline before raising. The
    timeout bounds the waiting between polls; a poll already in flight (its query retries per section 1.4 and the
    request timeout) may finish after it, so the call can return or throw up to one poll's duration after the timeout.
+   With a live session, a deal event of the waited deal triggers an early poll, but not before 1 s has passed since the
+   previous poll began, so a burst of events does not cause back-to-back polls (owner decision 2026-11-14).
 9. `requestCancel` accepts a deal id (UUID) only; anything else is rejected client-side before any request.
 10. A mutation by `idOrCustomId` checks that the resolved deal matches the reference (`id`, or `customId` exactly;
     case-insensitive for the UUID form) before sending; a mismatch is a decode error and nothing is sent.
@@ -359,7 +380,7 @@ Rules for `selling`:
    keep their results, and the call raises `BatchIncompleteError(results)` with the failure as its cause. An item the
    server leaves out of its answer is `Unknown`; the remaining chunks still go out and the error is raised at the end.
    The call returns normally only when every item has a server-reported outcome. A product that cannot be mapped
-   leaves `product` empty and does not change the outcome.
+   leaves `product` empty and does not change the outcome; the identity check of rule 7 still applies to it.
 4. `MarketProductResult.index` is read as the 0-based position within the chunk (schema doc: "Position in request").
    Not confirmed by the backend: question for the backend, together with the maximum batch size. An `index` outside
    the chunk or repeated cannot be matched; the mutation already ran, so the chunk is `Unknown`.
@@ -367,7 +388,9 @@ Rules for `selling`:
 6. Listing options reject `AUTO` and a `lifetime` outside 60..31536000 at construction; `setLifetimeForAll` rejects
    less than 600. `deliveryType` is always sent (default `SEMI`).
 7. Rows are cross-checked against the requested item where the product carries its identity; a mismatch makes the
-   chunk `Unknown`.
+   chunk `Unknown`. The identity (product id, inventory item id, asset id) is read from the raw row before the
+   product's money and wear values are decoded, so a product that cannot be decoded is still checked (owner decision
+   2026-11-14).
 8. A batch GraphQL error is a rejection (`NotSent`) only when the response has no `data` key AND every error has no
    path: a request error (parse, validation) is raised before execution and omits `data` (GraphQL spec, October 2021,
    7.1.2). `data: null`, or an error at the root field, means execution started (a batch resolver can fail part-way),
@@ -588,9 +611,11 @@ live.connect() / live.close()
   during a reconnect are lost (no offsets): `reconnected = true` tells the user to resync via GraphQL.
 - `deals.waitFor` accepts an optional live session: it waits with `poll()` instead of sleeping and fetches the GraphQL
   state early when a deal event for the same deal arrives.
-- WS implementation: official Centrifugo client where one exists for the language (Go `centrifuge-go`, JS/TS `centrifuge`,
-  Python `centrifuge-python`); otherwise a minimal own implementation of the Centrifugo JSON protocol (connect, subscribe,
-  ping/pong, push) over the language's WebSocket library. SSE: own small parser over the HTTP client (no browser `EventSource`
+- WS implementation: official Centrifugo client where one exists for the language and fits the SDK's bounds (Go
+  `centrifuge-go`, JS/TS `centrifuge`); otherwise a minimal own implementation of the Centrifugo JSON protocol (connect,
+  subscribe, ping/pong, push) over the language's WebSocket library. PHP and Python use their own (Python over
+  `websockets`: `centrifuge-python` keeps an unbounded internal queue and connects without a message size limit; owner
+  decision 2026-11-14). SSE: own small parser over the HTTP client (no browser `EventSource`
   dependency except in browser builds of JS/TS).
 - Live events are hints. Business decisions use GraphQL state (`deals.statuses`) after an event.
 

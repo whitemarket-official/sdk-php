@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Tests\Support;
 
 use WhiteMarket\Sdk\Transport\Clock;
+use WhiteMarket\Sdk\Transport\MonotonicClock;
 use WhiteMarket\Sdk\Transport\Sleeper;
 
 /**
  * A clock that moves only when the code under test sleeps: `sleep(5.0)` advances `now()` by five seconds and returns
  * at once. Records the delays. Lets a wait-with-timeout test run the whole loop deterministically.
  */
-final class ManualClock implements Clock, Sleeper
+final class ManualClock implements Clock, MonotonicClock, Sleeper
 {
     /**
      * Beyond this many seconds (about 3000 years) the clock stays at one far-future instant: a huge sleep never wraps.
@@ -19,6 +20,8 @@ final class ManualClock implements Clock, Sleeper
     private const MAX_ELAPSED_SECONDS = 1e11;
 
     private float $elapsedSeconds = 0.0;
+
+    private int $wallJump = 0;
 
     /** @var list<float> */
     private array $delays = [];
@@ -34,9 +37,25 @@ final class ManualClock implements Clock, Sleeper
     {
         $whole = (int) floor($this->elapsedSeconds);
         $microseconds = (int) round(($this->elapsedSeconds - $whole) * 1_000_000);
-        $now = $this->start->modify(\sprintf('+%d seconds +%d microseconds', $whole, $microseconds));
+        $now = $this->start->modify(\sprintf('%+d seconds +%d microseconds', $whole + $this->wallJump, $microseconds));
 
         return $now instanceof \DateTimeImmutable ? $now : throw new \LogicException('Cannot advance the clock');
+    }
+
+    /**
+     * Elapsed seconds that only sleeping and advancing move, never {@see jumpWallClock()}.
+     */
+    public function seconds(): float
+    {
+        return $this->elapsedSeconds;
+    }
+
+    /**
+     * Moves only the wall clock (`now()`), as a system clock change would; `seconds()` is not affected.
+     */
+    public function jumpWallClock(int $seconds): void
+    {
+        $this->wallJump += $seconds;
     }
 
     public function sleep(float $seconds): void

@@ -104,7 +104,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: make secrets-scan VERBOSE=1
+          fetch-depth: 0 # the history scan needs every commit
+      - run: make secrets-scan secrets-scan-history VERBOSE=1
       - run: make actionlint VERBOSE=1
       - run: make hooks-test
 

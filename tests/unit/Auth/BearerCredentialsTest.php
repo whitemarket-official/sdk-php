@@ -17,6 +17,7 @@ use WhiteMarket\Sdk\Auth\StaticAccessToken;
 use WhiteMarket\Sdk\Auth\TokenProvider;
 use WhiteMarket\Sdk\Auth\TokenStore;
 use WhiteMarket\Sdk\Errors\AuthenticationException;
+use WhiteMarket\Sdk\Errors\HttpException;
 use WhiteMarket\Sdk\Errors\TransportException;
 use WhiteMarket\Sdk\GraphQL\GraphQLExecutor;
 use WhiteMarket\Sdk\GraphQL\OperationType;
@@ -91,6 +92,72 @@ final class BearerCredentialsTest extends TestCase
         );
         $requests = $http->requests();
         self::assertSame((string) ($requests[1] ?? null)?->getBody(), (string) ($requests[3] ?? null)?->getBody(), 'the same body is replayed');
+    }
+
+    /**
+     * @return iterable<string, array{list<int>, list<string>}> query statuses in order => operations sent
+     */
+    public static function sharedBudgets(): iterable
+    {
+        yield '401 on the first attempt: the replay gets the two attempts left' => [
+            [401, 503, 503],
+            ['AuthToken', 'M', 'AuthToken', 'M', 'M'],
+        ];
+        yield '401 on the second attempt: the replay gets the one attempt left' => [
+            [503, 401, 503],
+            ['AuthToken', 'M', 'M', 'AuthToken', 'M'],
+        ];
+        yield '401 on the last attempt: the replay is still sent once, and not retried' => [
+            [503, 503, 401, 503],
+            ['AuthToken', 'M', 'M', 'M', 'AuthToken', 'M'],
+        ];
+    }
+
+    /**
+     * @param list<int> $statuses
+     * @param list<string> $operations
+     */
+    #[Test]
+    #[DataProvider('sharedBudgets')]
+    public function theReplayAfterA401SharesTheQuerysAttemptBudget(array $statuses, array $operations): void
+    {
+        $answers = [FakeHttpClient::authToken($this->first)];
+        foreach ($statuses as $status) {
+            $answers[] = FakeHttpClient::status($status, $status === 401 ? self::EXPIRED : '');
+            if ($status === 401) {
+                $answers[] = FakeHttpClient::authToken($this->second);
+            }
+        }
+        $http = new FakeHttpClient(...$answers);
+
+        try {
+            $this->executor($http, $this->partnerProvider($http, new InMemoryTokenStore()))->execute('query M { x }', 'M', OperationType::Query, []);
+            self::fail('Every attempt failed.');
+        } catch (HttpException $e) {
+            self::assertSame(503, $e->status);
+        }
+
+        self::assertSame($operations, array_column($this->sent($http), 0), 'at most 3 sends of the query in total, plus the exchange');
+    }
+
+    #[Test]
+    public function theReplayOfAMutationIsNotRetried(): void
+    {
+        $http = new FakeHttpClient(
+            FakeHttpClient::authToken($this->first),
+            FakeHttpClient::status(401, self::EXPIRED),
+            FakeHttpClient::authToken($this->second),
+            FakeHttpClient::status(503),
+        );
+
+        try {
+            $this->executor($http, $this->partnerProvider($http, new InMemoryTokenStore()))->execute('mutation M { x }', 'M', OperationType::Mutation, []);
+            self::fail('The replay failed.');
+        } catch (HttpException $e) {
+            self::assertSame(503, $e->status);
+        }
+
+        self::assertSame(['AuthToken', 'M', 'AuthToken', 'M'], array_column($this->sent($http), 0));
     }
 
     #[Test]

@@ -79,7 +79,7 @@ final class DealsApiTest extends TestCase
     {
         $generated = TestTransport::generatedClient($http, $retry);
         $api = $clock instanceof ManualClock
-            ? new DealsApi($generated, new ModelMapper(), $clock, $clock)
+            ? new DealsApi($generated, new ModelMapper(), $clock, monotonic: $clock)
             : new DealsApi($generated, new ModelMapper());
 
         return [$api, $http];
@@ -1512,6 +1512,82 @@ final class DealsApiTest extends TestCase
         self::assertCount(2, $http->requests());
         self::assertSame([], $clock->delays());
         self::assertEqualsWithDelta(20.0, $connection->deadlineAt(0) - $start, 0.001);
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function wallClockJumps(): iterable
+    {
+        yield 'wall clock jumps one hour forward' => [3600];
+        yield 'wall clock jumps one hour back' => [-3600];
+    }
+
+    #[Test]
+    #[DataProvider('wallClockJumps')]
+    public function waitForTimesOutByElapsedTimeNotByTheWallClock(int $jump): void
+    {
+        $clock = new ManualClock();
+        [$api, $http] = $this->api(new FakeHttpClient($this->initiated(), $this->initiated(), $this->initiated(), $this->initiated()), clock: $clock);
+        $jumped = false;
+        $until = static function () use ($clock, $jump, &$jumped): bool {
+            if (!$jumped) {
+                $jumped = true;
+                $clock->jumpWallClock($jump);
+            }
+
+            return false;
+        };
+
+        try {
+            $api->waitFor(self::ID, $until, timeout: 5.0, pollInterval: 2.0);
+            self::fail('Expected a DealWaitTimeoutException');
+        } catch (DealWaitTimeoutException) {
+            self::assertSame([2.0, 2.0, 1.0], $clock->delays());
+            self::assertCount(4, $http->requests());
+        }
+    }
+
+    #[Test]
+    public function waitForWithLiveHoldsABurstOfEventsToOneEarlyPollAtOneSecond(): void
+    {
+        $clock = new ManualClock();
+        [$live] = $this->live($clock, [[0.1, $this->dealEvent(self::ID)], [0.1, $this->dealEvent(self::ID)], null]);
+        [$api, $http] = $this->api(new FakeHttpClient($this->initiated(), $this->states([['id' => self::ID, 'customId' => 'order-1', 'status' => 'OFFERED']])), clock: $clock);
+
+        $api->waitFor('order-1', Until::offered(), pollInterval: 20.0, live: $live);
+
+        self::assertCount(2, $http->requests());
+        self::assertEqualsWithDelta(1.0, $clock->seconds(), 0.001);
+    }
+
+    #[Test]
+    public function waitForWithLivePollsAtOnceWhenTheEventComesAfterTheHold(): void
+    {
+        $clock = new ManualClock();
+        [$live] = $this->live($clock, [[1.5, $this->dealEvent(self::ID)]]);
+        [$api, $http] = $this->api(new FakeHttpClient($this->initiated(), $this->states([['id' => self::ID, 'customId' => 'order-1', 'status' => 'OFFERED']])), clock: $clock);
+
+        $api->waitFor('order-1', Until::offered(), pollInterval: 20.0, live: $live);
+
+        self::assertCount(2, $http->requests());
+        self::assertEqualsWithDelta(1.5, $clock->seconds(), 0.001);
+    }
+
+    #[Test]
+    public function waitForWithLiveNeverHoldsPastTheDeadline(): void
+    {
+        $clock = new ManualClock();
+        [$live] = $this->live($clock, [[0.1, $this->dealEvent(self::ID)], null]);
+        [$api, $http] = $this->api(new FakeHttpClient($this->initiated(), $this->initiated()), clock: $clock);
+
+        try {
+            $api->waitFor('order-1', Until::offered(), timeout: 0.5, pollInterval: 20.0, live: $live);
+            self::fail('Expected a DealWaitTimeoutException');
+        } catch (DealWaitTimeoutException) {
+            self::assertCount(2, $http->requests());
+            self::assertEqualsWithDelta(0.5, $clock->seconds(), 0.001);
+        }
     }
 
     #[Test]

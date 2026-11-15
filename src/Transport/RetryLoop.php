@@ -99,8 +99,9 @@ final readonly class RetryLoop
         \Closure $failure,
         #[\SensitiveParameter]
         \Closure $transportFailure,
+        int $firstAttempt = 1,
     ): mixed {
-        for ($attempt = 1; ; ++$attempt) {
+        for ($attempt = $firstAttempt; ; ++$attempt) {
             $input = $build();
             $started = hrtime(true);
             $clientFailure = null;
