@@ -15,18 +15,22 @@ namespace WhiteMarket\Sdk\Errors;
  */
 final class MutationOutcomeUnknownException extends WhiteMarketException
 {
+    /** Where to read the outcome of each known operation. */
+    private const CHECK_HINTS = [
+        'wallet.takeCredit' => 'wallet.credit()',
+        'wallet.transfer' => 'wallet.transfers()',
+    ];
+
     /**
-     * @param string $operation the SDK method, for example `wallet.transfer`
+     * @param string $operation the SDK method, for example `wallet.transfer`; the hint on where to check comes from it
      * @param \Throwable $cause the original failure, kept as {@see getPrevious()}
-     * @param string $checkHint what to read to learn the outcome, for example `wallet.transfers()`
      */
     public function __construct(
         public readonly string $operation,
         \Throwable $cause,
-        string $checkHint,
     ) {
         parent::__construct(
-            \sprintf('%s may or may not have been executed; check %s before trying again.', $operation, $checkHint),
+            \sprintf('%s may or may not have been executed; check %s before trying again.', $operation, self::CHECK_HINTS[$operation] ?? 'the result'),
             0,
             $cause,
         );

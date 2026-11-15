@@ -14,7 +14,6 @@ use WhiteMarket\Sdk\Generated\Input\MarketProductEditInput;
 use WhiteMarket\Sdk\Generated\Input\MarketProductNewInput;
 use WhiteMarket\Sdk\Generated\Input\MarketProductSearchInput;
 use WhiteMarket\Sdk\Market\ProductFilter;
-use WhiteMarket\Sdk\Models\InventoryItem;
 use WhiteMarket\Sdk\Models\ModelMapper;
 use WhiteMarket\Sdk\Models\Money;
 use WhiteMarket\Sdk\Models\Page;
@@ -129,8 +128,8 @@ final readonly class SellingApi
             $inputs,
             'market_new_multiple',
             fn(array $chunk): array => $this->api->marketNewMultiple(items: $chunk, deliveryPromise: $promise, deliveryType: $type, lifetime: $options->lifetime),
-            static fn(MarketProductNewInput $input, Product|ProductHistory $product): bool => !$product instanceof Product || !$product->item instanceof InventoryItem
-                || ($input->assetId !== null ? $product->item->assetId === $input->assetId : self::sameUuid($input->inventoryId, $product->item->id)),
+            static fn(MarketProductNewInput $input, BatchRowIdentity $row): bool => $row->itemId === null || $row->assetId === null
+                || ($input->assetId !== null ? $row->assetId === $input->assetId : self::sameUuid($input->inventoryId, $row->itemId)),
         );
     }
 
@@ -169,8 +168,8 @@ final readonly class SellingApi
             $inputs,
             'market_edit_multiple',
             fn(array $chunk): array => $this->api->marketEditMultiple($chunk),
-            static fn(MarketProductEditInput $input, Product|ProductHistory $product): bool => !$product instanceof Product
-                || ($input->productId !== null ? self::sameUuid($input->productId, $product->id) : (!$product->item instanceof InventoryItem || $product->item->assetId === $input->assetId)),
+            static fn(MarketProductEditInput $input, BatchRowIdentity $row): bool => $row->archived
+                || ($input->productId !== null ? self::sameUuid($input->productId, $row->id) : ($row->assetId === null || $row->assetId === $input->assetId)),
         );
     }
 
@@ -209,7 +208,7 @@ final readonly class SellingApi
             $productIds,
             'market_remove_multiple',
             fn(array $chunk): array => $this->api->marketRemoveMultiple($chunk),
-            static fn(string $productId, Product|ProductHistory $product): bool => !$product instanceof ProductHistory || self::sameUuid($productId, $product->id),
+            static fn(string $productId, BatchRowIdentity $row): bool => !$row->archived || self::sameUuid($productId, $row->id),
         );
     }
 
@@ -275,15 +274,16 @@ final readonly class SellingApi
      *
      * A row whose product carries the identity of an item is also checked against the item requested at that position
      * (`$sameItem`; a row without a product, or a product without the identity, passes): `index` is unconfirmed, and a
-     * server counting from 1 that answers only some rows would otherwise attach rows to the wrong items. A mismatch
-     * makes the whole chunk `Unknown` like an unusable `index`.
+     * server counting from 1 that answers only some rows would otherwise attach rows to the wrong items. The identity
+     * is read BEFORE any money or wear is decoded, so a product that cannot be decoded is still checked (SDK_SPEC 3.5).
+     * A mismatch makes the whole chunk `Unknown` like an unusable `index`.
      *
      * @template T
      *
      * @param list<T> $items
      * @param string $field root field of the mutation
      * @param \Closure(list<T>): list<BatchRow> $send the single request of one chunk
-     * @param \Closure(T, Product|ProductHistory): bool $sameItem whether the returned product is the one requested
+     * @param \Closure(T, BatchRowIdentity): bool $sameItem whether the returned product is the one requested
      *
      * @return list<BatchItemResult> every item `Succeeded` or `Failed`
      *
@@ -299,6 +299,8 @@ final readonly class SellingApi
             try {
                 $rows = $send($chunk);
             } catch (\Throwable $e) {
+                // A server answer of HTTP 401 (after the transport's refresh and replay) arrives as an AuthenticationException
+                // and is a rejection: NotSent. An exception thrown by the client itself is not an answer: Unknown.
                 $outcome = $this->rejection->isRejection($e, $field, rootFieldErrorRejects: false) ? BatchOutcome::NotSent : BatchOutcome::Unknown;
 
                 throw new BatchIncompleteException($this->withOutcome($results, $offset, $size, $outcome), $e);
@@ -310,7 +312,7 @@ final readonly class SellingApi
                     $row = $byPosition[$position] ?? null;
                     $chunkResults[$offset + $position] = $row === null
                         ? new BatchItemResult($offset + $position, BatchOutcome::Unknown)
-                        : $this->resultFromRow($offset + $position, $row, \sprintf('%s[%d]', $field, $position), static fn(Product|ProductHistory $product): bool => $sameItem($item, $product));
+                        : $this->resultFromRow($offset + $position, $row, \sprintf('%s[%d]', $field, $position), static fn(BatchRowIdentity $identity): bool => $sameItem($item, $identity));
                 }
             } catch (DecodeException $e) {
                 // The mutation ran: only the answer is unusable.
@@ -353,20 +355,22 @@ final readonly class SellingApi
 
     /**
      * @param BatchRow $row
-     * @param \Closure(Product|ProductHistory): bool $isRequestedItem
+     * @param \Closure(BatchRowIdentity): bool $isRequestedItem
      *
      * @throws DecodeException the product is not the item requested at this position
      */
     private function resultFromRow(int $index, object $row, string $path, \Closure $isRequestedItem): BatchItemResult
     {
+        // The identity first: it must not depend on the rest of the product decoding.
+        $identity = $this->mapper->batchIdentity($row->product);
+        if ($identity instanceof BatchRowIdentity && !$isRequestedItem($identity)) {
+            throw new DecodeException($path . '.product.id', 'the product is not the item requested at this position');
+        }
         try {
             $product = $this->mapper->batchProduct($row->product, $path . '.product');
         } catch (DecodeException) {
             // The outcome the server reported stands; only its product is unreadable.
             $product = null;
-        }
-        if ($product !== null && !$isRequestedItem($product)) {
-            throw new DecodeException($path . '.product.id', 'the product is not the item requested at this position');
         }
 
         return new BatchItemResult($index, $row->isCreated ? BatchOutcome::Succeeded : BatchOutcome::Failed, $product, $row->errorCategory, $row->errorMessage);

@@ -10,6 +10,11 @@ namespace WhiteMarket\Sdk\Errors;
  * rejections; so is a GraphQL error that can only have come from the root field itself (for a batch: only a request error, a response without `data` and without a path). Every other failure
  * (a timeout, a 5xx, an unreadable response, a broken collaborator) may have happened after the mutation ran.
  *
+ * An {@see AuthenticationException} here is the server's HTTP 401 answer (after the transport's refresh and replay):
+ * the server rejected the request before executing it, so it is a rejection. An exception thrown by the client itself
+ * (a broken collaborator, even one that throws an `AuthenticationException`) is not an answer: callers wrap it in
+ * a {@see \WhiteMarket\Sdk\Errors\TransportException} (batch: `Unknown`). Server 401 answer -> NotSent; client-thrown exception -> Unknown.
+ *
  * @internal shared by the high-level API classes; not part of the public API
  */
 final class MutationRejection

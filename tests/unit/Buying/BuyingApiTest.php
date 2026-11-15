@@ -614,13 +614,69 @@ final class BuyingApiTest extends TestCase
     #[Test]
     public function reconcilesWithTheGeneratedCustomId(): void
     {
-        [$api, $http] = $this->api(new FakeHttpClient(FakeHttpClient::status(500), $this->found('DealItem', 'whatever')));
+        [$api, $http] = $this->api(
+            new FakeHttpClient(FakeHttpClient::status(500), FakeHttpClient::json(self::NOT_FOUND), FakeHttpClient::json(self::NOT_FOUND)),
+            new BuyReconciliation(attempts: 1),
+        );
 
-        $result = $api->buyByAssetId(App::Csgo, '40000000000000000002');
+        try {
+            $api->buyByAssetId(App::Csgo, '40000000000000000002');
+            self::fail('The outcome is unknown.');
+        } catch (PurchaseOutcomeUnknownException $e) {
+            self::assertMatchesRegularExpression(self::UUID_V4, $e->customId);
+            self::assertSame($e->customId, $this->variablesOf($http, 0)['customId'] ?? null);
+            self::assertSame(['customId' => $e->customId], $this->variablesOf($http, 1));
+            self::assertSame(['customId' => $e->customId], $this->variablesOf($http, 2));
+        }
+    }
 
-        self::assertMatchesRegularExpression(self::UUID_V4, $result->customId);
-        self::assertSame($result->customId, $this->variablesOf($http, 0)['customId'] ?? null);
-        self::assertSame(['customId' => $result->customId], $this->variablesOf($http, 1));
+    /**
+     * @return iterable<string, array{?string}>
+     */
+    public static function otherCustomIds(): iterable
+    {
+        yield 'another customId' => ['order-43'];
+        yield 'the same customId in another case' => ['ORDER-42'];
+        yield 'with a trailing space' => ['order-42 '];
+        yield 'no customId' => [null];
+    }
+
+    #[Test]
+    #[DataProvider('otherCustomIds')]
+    public function aFoundDealWithoutTheLookedUpCustomIdIsAFailedLookupAndTheSearchGoesOn(?string $other): void
+    {
+        $foreign = SyntheticDeal::inProgress(DealItem::class, ['customId' => $other]);
+        [$api, $http] = $this->api(new FakeHttpClient(
+            FakeHttpClient::status(500),
+            FakeHttpClient::json(['data' => ['deal_item' => $foreign]]),
+            $this->found('DealHistoryItem', 'order-42'),
+        ));
+
+        $result = $api->buyProduct('7d1c0e52-3b8a-4f6d-9a21-5e4c8b7f0a13', options: new BuyOptions(customId: 'order-42'));
+
+        self::assertTrue($result->reconciled);
+        self::assertTrue($result->deal->isArchived(), 'the deal with the right customId, not the first one found');
+        self::assertSame('order-42', $result->deal->customId);
+        self::assertSame(['MarketBuy', 'DealItem', 'DealHistoryItem'], array_column($http->operations(), 0));
+    }
+
+    #[Test]
+    #[DataProvider('otherCustomIds')]
+    public function onlyDealsWithoutTheLookedUpCustomIdLeaveTheOutcomeUnknown(?string $other): void
+    {
+        [$api] = $this->api(new FakeHttpClient(
+            FakeHttpClient::status(500),
+            FakeHttpClient::json(['data' => ['deal_item' => SyntheticDeal::inProgress(DealItem::class, ['customId' => $other])]]),
+            FakeHttpClient::json(['data' => ['deal_history_item' => SyntheticDeal::archived(DealHistoryItem::class, ['customId' => $other])]]),
+        ), new BuyReconciliation(attempts: 1));
+
+        try {
+            $api->buyProduct('7d1c0e52-3b8a-4f6d-9a21-5e4c8b7f0a13', options: new BuyOptions(customId: 'order-42'));
+            self::fail('A deal of another purchase is not this one.');
+        } catch (PurchaseOutcomeUnknownException $e) {
+            self::assertInstanceOf(DecodeException::class, $e->lastLookupError);
+            self::assertSame('deal_history_item.customId', $e->lastLookupError->path);
+        }
     }
 
     #[Test]

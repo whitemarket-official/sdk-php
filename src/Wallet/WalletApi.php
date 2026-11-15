@@ -189,7 +189,7 @@ final readonly class WalletApi
         try {
             return $this->mapper->debt($this->api->walletCreditGet($input), 'wallet_credit_get');
         } catch (\Throwable $e) {
-            throw $this->failure($e, 'wallet_credit_get', 'wallet.takeCredit', 'wallet.credit()');
+            throw $this->failure($e, 'wallet_credit_get', 'wallet.takeCredit');
         }
     }
 
@@ -211,7 +211,7 @@ final readonly class WalletApi
         try {
             return $this->mapper->walletTransfer($this->api->walletTransferSend($input, $to), 'wallet_transfer_send');
         } catch (\Throwable $e) {
-            throw $this->failure($e, 'wallet_transfer_send', 'wallet.transfer', 'wallet.transfers()');
+            throw $this->failure($e, 'wallet_transfer_send', 'wallet.transfer');
         }
     }
 
@@ -230,9 +230,9 @@ final readonly class WalletApi
      * collaborator, may have happened after the money moved. The failure is sensitive: its trace holds the caller's
      * frames, and with them the recipient.
      */
-    private function failure(#[\SensitiveParameter] \Throwable $e, string $field, string $operation, string $checkHint): \Throwable
+    private function failure(#[\SensitiveParameter] \Throwable $e, string $field, string $operation): \Throwable
     {
-        return $this->rejection->isRejection($e, $field) ? $e : new MutationOutcomeUnknownException($operation, $e, $checkHint);
+        return $this->rejection->isRejection($e, $field) ? $e : new MutationOutcomeUnknownException($operation, $e);
     }
 
     /**

@@ -9,6 +9,7 @@ use WhiteMarket\Sdk\Errors\AuthenticationException;
 use WhiteMarket\Sdk\Errors\DecodeException;
 use WhiteMarket\Sdk\Errors\GraphQLErrorEntry;
 use WhiteMarket\Sdk\Errors\GraphQLException;
+use WhiteMarket\Sdk\Transport\AttemptBudget;
 use WhiteMarket\Sdk\Transport\HttpTransport;
 
 /**
@@ -52,15 +53,17 @@ final readonly class GraphQLExecutor implements OperationExecutor
     private function postWithOneReplay(string $operationName, OperationType $type, #[\SensitiveParameter] string $body): string
     {
         $headers = $this->credentials->headers($operationName);
+        // One budget for the call: the replay continues the attempt count of the first send (SDK_SPEC 1.4).
+        $budget = new AttemptBudget();
         try {
-            return $this->transport->post($operationName, $type, $body, $headers);
+            return $this->transport->post($operationName, $type, $body, $headers, $budget);
         } catch (AuthenticationException $e) {
             $replay = $this->credentials->headersAfterRejection($headers);
             if ($replay === null) {
                 throw $e;
             }
 
-            return $this->transport->post($operationName, $type, $body, $replay);
+            return $this->transport->post($operationName, $type, $body, $replay, $budget);
         }
     }
 

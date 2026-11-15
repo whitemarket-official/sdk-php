@@ -16,8 +16,32 @@ While the version is `0.x`, a minor release (`0.2.0`) may contain breaking chang
 - Generated layer: `MarketProductState::AVAILABLE_FOR_TRADE` and the optional input field
   `MarketProductSearchInput::$forTrade`. `ProductFilter` does not expose `forTrade` yet.
 
+### Breaking
+
+- `Errors\MutationOutcomeUnknownException::__construct(string $operation, \Throwable $cause, string $checkHint)` ->
+  `__construct(string $operation, \Throwable $cause)`: the "where to check" hint is derived from the operation name
+  (owner decision 2026-11-14, same as the Python SDK). Only code that constructs the exception itself is affected;
+  the message of the SDK's own exceptions is unchanged.
+
 ### Changed
 
+- Auth: an access token whose `exp` is in the past or within the 5 minute refresh margin counts as expired; the
+  Partner Token is exchanged again before the next request instead of after a 401. The cached lifetime never runs past
+  `exp` by the local clock (it is capped by `exp - iat` as before), and a non-integer `exp` / `iat` is rounded down
+  instead of being ignored; one beyond the 64-bit integer range is clamped to it, so a huge negative `exp` is expired. Before, a past `exp` was taken as the documented 24 h, `exp - iat` alone set the lifetime,
+  and every token was kept at least 10 minutes (SDK_SPEC 3.1, ADR 0003).
+- Retries: the replay after a 401 shares the call's attempt budget, so a query sends at most `RetryPolicy::$maxAttempts`
+  requests (plus the token exchange); a 401 on the last attempt is still replayed once. Before, the replay could send
+  up to `maxAttempts` more (SDK_SPEC 1.4).
+- Buying: reconciliation accepts a found deal only when its `customId` equals the one looked up; a different or null
+  `customId` counts as a failed lookup and the attempts continue (SDK_SPEC 3.3 rule 8).
+- Selling batches: the identity of a returned row is checked before its price and wear are decoded, so a row with an
+  undecodable product and the wrong identity now makes the chunk `Unknown` instead of passing (SDK_SPEC 3.5 rule 7).
+- `deals()->waitFor()`: the timeout is measured on a monotonic clock, so a system clock change no longer moves it;
+  with `live`, a burst of deal events causes at most one early poll, not before 1 s after the previous poll began
+  (SDK_SPEC 3.4 rules 4 and 8).
+- CI: gitleaks also scans the full git history (`make secrets-scan-history`); its allowlist paths are anchored to the
+  repository root, so a nested `vendor/` directory is scanned.
 - `DealStatus::Queued` can now be passed in the status filters of `deals()->listAsBuyer()` and
   `deals()->listAsSeller()`. Before, the SDK threw `InvalidArgumentException` because the schema did not accept it.
 

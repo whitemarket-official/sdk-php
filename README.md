@@ -238,7 +238,7 @@ $open = $client->deals->listAsBuyer(); // also listAsSeller(), history()
 - Lists: `listAsBuyer(?statusesWith, ?statusesWithout)`, `listAsSeller(...)`, `history(?DealHistoryFilter, ?PageRequest)`
   (`Page`), `iterateHistory(?DealHistoryFilter, ?int $pageSize)`. `DealHistoryFilter` has `action`, `status`, `createdFrom`,
   `createdTo`, `priceFrom`, `priceTo`, `nameHash`, `sort`, ...
-- `waitFor(..., live: $live)` wakes up early on live deal events (see [Live updates](#live-updates)).
+- `waitFor(..., live: $live)` wakes up early on live deal events, but not sooner than 1 s after the previous poll began (see [Live updates](#live-updates)). The timeout is measured with a monotonic clock, so a system clock change does not move it.
 
 Two ways to follow a deal:
 

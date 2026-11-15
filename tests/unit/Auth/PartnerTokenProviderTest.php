@@ -86,19 +86,60 @@ final class PartnerTokenProviderTest extends TestCase
         self::assertCount($refreshed ? 1 : 0, $http->requests());
     }
 
+    /**
+     * @return iterable<string, array{int}> seconds from the exchange to the token's exp
+     */
+    public static function expiredOrWithinTheMargin(): iterable
+    {
+        yield 'exp in the past' => [-60];
+        yield 'exp at the moment of the exchange' => [0];
+        yield 'exp inside the margin' => [60];
+        yield 'exp exactly at the margin' => [300];
+    }
+
     #[Test]
-    public function keepsATokenShorterThanTheMarginLongEnoughNotToExchangeOnEveryCall(): void
+    #[DataProvider('expiredOrWithinTheMargin')]
+    public function aTokenExpiredOrWithinTheMarginIsUsedOnceAndExchangedAgainBeforeTheNextRequest(int $expIn): void
     {
         $store = new InMemoryTokenStore();
-        $short = SyntheticJwt::issuedAt(new \DateTimeImmutable(self::ISSUED), 60, 'short');
-        $this->provider(new FakeHttpClient(FakeHttpClient::authToken($short)), $store, self::ISSUED)->accessToken();
-        $http = new FakeHttpClient();
+        $short = SyntheticJwt::withClaims(['exp' => (new \DateTimeImmutable(self::ISSUED))->getTimestamp() + $expIn]);
+        $fresh = SyntheticJwt::issuedAt(new \DateTimeImmutable(self::ISSUED), 86_400, 'fresh');
+        $http = new FakeHttpClient(FakeHttpClient::authToken($short), FakeHttpClient::authToken($fresh));
+        $provider = $this->provider($http, $store, self::ISSUED);
 
-        $token = $this->provider($http, $store, '2026-01-01T00:04:59+00:00')->accessToken();
+        self::assertSame($short, $provider->accessToken()->reveal(), 'the token just received serves the request that asked for it');
+        self::assertSame($fresh, $provider->accessToken()->reveal(), 'it is never served from the store: no 401 round trip');
+        self::assertCount(2, $http->requests());
+    }
 
-        self::assertSame($short, $token->reveal(), 'renewed through the 401 path if the server rejects it earlier');
-        self::assertSame([], $http->requests());
-        self::assertSame('2026-01-01T00:10:00+00:00', $store->get()?->expiresAt->format(\DATE_ATOM));
+    #[Test]
+    public function aStoredTokenIsExchangedAgainOnceItsExpIsWithinTheMarginEvenWithAnOldIat(): void
+    {
+        $issued = (new \DateTimeImmutable(self::ISSUED))->getTimestamp();
+        $store = new InMemoryTokenStore();
+        $old = SyntheticJwt::withClaims(['iat' => $issued - 1000, 'exp' => $issued + 400]);
+        $fresh = SyntheticJwt::issuedAt(new \DateTimeImmutable(self::ISSUED), 86_400, 'fresh');
+        $this->provider(new FakeHttpClient(FakeHttpClient::authToken($old)), $store, self::ISSUED)->accessToken();
+        $http = new FakeHttpClient(FakeHttpClient::authToken($fresh));
+
+        $token = $this->provider($http, $store, '@' . ($issued + 100))->accessToken();
+
+        self::assertSame($fresh, $token->reveal(), '100 s later its exp is 300 s away: expired by the margin');
+        self::assertCount(1, $http->requests());
+    }
+
+    #[Test]
+    public function aTokenOneSecondPastTheMarginIsServedFromTheStore(): void
+    {
+        $store = new InMemoryTokenStore();
+        $jwt = SyntheticJwt::withClaims(['exp' => (new \DateTimeImmutable(self::ISSUED))->getTimestamp() + 301]);
+        $http = new FakeHttpClient(FakeHttpClient::authToken($jwt));
+        $provider = $this->provider($http, $store, self::ISSUED);
+
+        $provider->accessToken();
+
+        self::assertSame($jwt, $provider->accessToken()->reveal());
+        self::assertCount(1, $http->requests());
     }
 
     #[Test]

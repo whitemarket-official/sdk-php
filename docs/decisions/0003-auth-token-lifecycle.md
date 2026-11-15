@@ -37,12 +37,20 @@ Option 2.
   static token is never replayed. A second 401 propagates as `AuthenticationException`. Mutations are replayed too:
   SDK_SPEC 1.4 treats 401 as "rejected before execution" (the JWT check runs before the resolver). Owner confirmed
   2026-10-31 that this is the one exception to CLAUDE.md rule 2 ("mutations are never retried").
-- Expiry: lifetime = `exp - iat` when both are integers, `iat >= 0` and `exp > iat`, otherwise `exp - now`; it is
+- Expiry (until 2026-11-14, see the change below): lifetime = `exp - iat` when both are integers, `iat >= 0` and `exp > iat`, otherwise `exp - now`; it is
   counted from the local clock, so a skewed host clock does not shorten it. Missing, unparsable or non-positive -> 24 h
   (the documented lifetime), and no lifetime is taken as longer than 24 h (this also keeps the arithmetic in integer
-  range). The token is refreshed 5 minutes before that point and kept at least 10 minutes, so a token shorter than
-  the margin is not exchanged on every call; if the server rejects it earlier, the 401 path renews it. All of it is in
+  range). The token is refreshed 5 minutes before that point. Changed 2026-11-14 (owner decision, SDK_SPEC 3.1): the
+  lifetime is `exp - now` by the local clock, capped by `exp - iat` (so a host clock behind the issuer does not
+  lengthen it; a host clock ahead of the issuer now shortens it), and a float NumericDate is rounded down (outside the integer range: clamped to its end). An `exp` in
+  the past or within the 5 minute margin therefore counts as expired, at any later read of the store too; such a token
+  serves the request that asked for it and the next request exchanges again, instead of a 401 round trip. Before, a
+  past `exp` gave 24 h, `exp - iat` alone set the lifetime, and every token was kept at least 10 minutes. All of it is in
   whole seconds (JWT claims are), so the bounds hold to within 1 s of a sub-second clock.
+- Attempt budget across the replay (2026-11-14, SDK_SPEC 1.4): the first send and the replay share one
+  `Transport\AttemptBudget`, so a query sends at most `maxAttempts` requests plus the exchange; a 401 on the last
+  attempt is still replayed once and that replay is not retried. Before, the replay started a fresh retry loop (up
+  to 2 x `maxAttempts` sends).
 - `Psr16TokenStore` keys: caller-given and validated against the PSR-16 minimum (`A-Z a-z 0-9 _ .`, up to 64).
   `forPartnerToken()` derives `whitemarket_sdk.access_token.<first 32 hex of sha256(partner token)>`, so two Partner
   Tokens sharing a cache never read each other's JWT. The cache entry holds the JWT in plain text (whoever reads the

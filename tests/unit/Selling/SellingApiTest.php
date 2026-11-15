@@ -53,10 +53,12 @@ use WhiteMarket\Sdk\Selling\SellingApi;
 use WhiteMarket\Sdk\Tests\Support\FakeHttpClient;
 use WhiteMarket\Sdk\Tests\Support\FakeOperationExecutor;
 use WhiteMarket\Sdk\Tests\Support\SyntheticDeal;
+use WhiteMarket\Sdk\Tests\Support\SyntheticJwt;
 use WhiteMarket\Sdk\Tests\Support\SyntheticResult;
 use WhiteMarket\Sdk\Tests\Support\TestMoney;
 use WhiteMarket\Sdk\Tests\Support\TestTransport;
 use WhiteMarket\Sdk\Transport\RetryPolicy;
+use WhiteMarket\Sdk\WhiteMarketClient;
 
 #[CoversClass(SellingApi::class)]
 #[CoversClass(BatchItemResult::class)]
@@ -639,6 +641,58 @@ final class SellingApiTest extends TestCase
         self::assertSame([null, null], array_map(static fn(BatchItemResult $r): mixed => $r->product, $results));
     }
 
+    /**
+     * @return iterable<string, array{string, list<string>, array{id: string, asset?: string, inventory?: string}, string}> method, requested items, the product of
+     *                                                                                                                      the row at position 0 (its price is undecodable), `price` or `float`
+     */
+    public static function undecodableProductsWithAWrongIdentity(): iterable
+    {
+        $other = '11111111-1111-4111-8111-111111111111';
+
+        yield 'list by asset id, undecodable price' => ['listMany', [self::ASSET_ID], ['id' => 'p0', 'asset' => '40000000000000000099'], 'price'];
+        yield 'list by inventory id, undecodable price' => ['listMany', [self::INVENTORY_ID], ['id' => 'p0', 'inventory' => $other], 'price'];
+        yield 'list by asset id, undecodable wear' => ['listMany', [self::ASSET_ID], ['id' => 'p0', 'asset' => '40000000000000000099'], 'float'];
+        yield 'reprice by listing id, undecodable price' => ['repriceMany', [self::PRODUCT_ID], ['id' => $other], 'price'];
+        yield 'reprice by asset id, undecodable price' => ['repriceMany', [self::ASSET_ID], ['id' => 'p0', 'asset' => '40000000000000000099'], 'price'];
+        yield 'reprice by asset id, undecodable wear' => ['repriceMany', [self::ASSET_ID], ['id' => 'p0', 'asset' => '40000000000000000099'], 'float'];
+        yield 'remove, undecodable price' => ['removeMany', [self::PRODUCT_ID], ['id' => $other], 'price'];
+    }
+
+    /**
+     * @param list<string> $items
+     * @param array{id: string, asset?: string, inventory?: string} $spec
+     */
+    #[Test]
+    #[DataProvider('undecodableProductsWithAWrongIdentity')]
+    public function theIdentityIsCheckedBeforeMoneyAndWearAreDecoded(string $method, array $items, array $spec, string $broken): void
+    {
+        [, , $ns] = $this->spec($method);
+        if ($ns === MarketRemoveMultiple::class) {
+            $product = $this->historyProduct($ns, $spec['id']);
+            $product['price'] = ['currency' => 'USD', 'value' => 'not-a-number'];
+        } else {
+            $product = $this->liveProduct($ns, $spec['id'], item: $spec);
+            if ($broken === 'price') {
+                $product['price'] = ['currency' => 'USD', 'value' => 'not-a-number'];
+            } else {
+                $item = $product['item'] ?? null;
+                self::assertIsArray($item);
+                $item['float'] = 'not-a-number';
+                $product['item'] = $item;
+            }
+        }
+        [$api] = $this->api(new FakeHttpClient($this->answer($ns, [$this->row($ns, 0, true, $product)])));
+
+        try {
+            $this->callWith($api, $method, $items);
+            self::fail('A mismatching row must not be accepted, decodable or not.');
+        } catch (BatchIncompleteException $e) {
+            self::assertSame([BatchOutcome::Unknown], array_map(static fn(BatchItemResult $r): BatchOutcome => $r->outcome, $e->results));
+            self::assertInstanceOf(DecodeException::class, $e->getPrevious());
+            self::assertStringContainsString('not the item requested', $e->getPrevious()->getMessage());
+        }
+    }
+
     #[Test]
     #[DataProvider('manyMethods')]
     public function anItemWithoutARowIsUnknownAndLaterChunksStillGoOutBeforeTheExceptionIsRaised(string $method): void
@@ -674,7 +728,7 @@ final class SellingApiTest extends TestCase
 
         yield 'HTTP 503 (ambiguous)' => [FakeHttpClient::status(503), BatchOutcome::Unknown, ServiceUnavailableException::class];
         yield 'a network error (ambiguous)' => [FakeHttpClient::networkErrorHoldingTheRequest(), BatchOutcome::Unknown, TransportException::class];
-        yield 'an AuthenticationException thrown by the client (ambiguous)' => [new AuthenticationException(401, ''), BatchOutcome::Unknown, TransportException::class];
+        yield 'an AuthenticationException thrown by the client, not a server answer (ambiguous)' => [new AuthenticationException(401, ''), BatchOutcome::Unknown, TransportException::class];
         yield 'an unreadable body (ambiguous)' => [FakeHttpClient::status(200, 'not json'), BatchOutcome::Unknown, DecodeException::class];
         yield 'HTTP 429 (rejected)' => [FakeHttpClient::status(429), BatchOutcome::NotSent, RateLimitException::class];
         yield 'HTTP 400 (rejected)' => [FakeHttpClient::status(400, 'bad'), BatchOutcome::NotSent, BadRequestException::class];
@@ -710,6 +764,26 @@ final class SellingApiTest extends TestCase
             self::assertSame([0, 1, 2, 3, 4, 5], array_map(static fn(BatchItemResult $r): int => $r->index, $e->results));
             self::assertSame(['a-0', 'a-1', null, null, null, null], array_map(static fn(BatchItemResult $r): ?string => $r->product?->id, $e->results));
             self::assertInstanceOf($exception, $e->getPrevious());
+        }
+    }
+
+    #[Test]
+    public function aServerAnswerOf401AfterTheReplayIsNotSentButAClientThrown401IsUnknown(): void
+    {
+        $ns = MarketNewMultiple::class;
+        $first = SyntheticJwt::issuedAt(new \DateTimeImmutable(), 86_400, 'first');
+        $second = SyntheticJwt::issuedAt(new \DateTimeImmutable(), 86_400, 'second');
+        // A refreshable credential: the executor refreshes once and replays the rejected request, which is rejected again.
+        $http = new FakeHttpClient(FakeHttpClient::authToken($first), FakeHttpClient::status(401), FakeHttpClient::authToken($second), FakeHttpClient::status(401), $this->answer($ns, $this->rowsFor($ns, 1, 'c')));
+        $client = WhiteMarketClient::create(partnerToken: 'synthetic-partner-token', httpClient: $http, sellingBatchSize: 2);
+
+        try {
+            $client->selling->listMany(array_map(static fn(int $i): Listing => new Listing(self::identity('listMany', $i), TestMoney::usd('5')), [0, 1, 2]));
+            self::fail('Expected a BatchIncompleteException');
+        } catch (BatchIncompleteException $e) {
+            self::assertSame(['AuthToken', 'MarketNewMultiple', 'AuthToken', 'MarketNewMultiple'], array_column($http->operations(), 0), 'one replay, chunk 2 never sent');
+            self::assertSame([BatchOutcome::NotSent, BatchOutcome::NotSent, BatchOutcome::NotSent], array_map(static fn(BatchItemResult $r): BatchOutcome => $r->outcome, $e->results));
+            self::assertInstanceOf(AuthenticationException::class, $e->getPrevious());
         }
     }
 

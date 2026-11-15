@@ -51,6 +51,7 @@ final readonly class HttpTransport
 
     /**
      * @param array<string, Secret> $headers authentication headers
+     * @param AttemptBudget $budget the attempts this call has used; the replay after a 401 passes the same one (SDK_SPEC 1.4)
      *
      * @return string the body of the 2xx response
      *
@@ -64,6 +65,7 @@ final readonly class HttpTransport
         string $body,
         #[\SensitiveParameter]
         array $headers,
+        AttemptBudget $budget = new AttemptBudget(),
     ): string {
         $client = $this->clientFor($type);
 
@@ -74,7 +76,11 @@ final readonly class HttpTransport
             // A new request per attempt: a client may leave the body stream of the previous one read to the end.
             fn(): RequestInterface => $this->request($body, $headers),
             static fn(#[\SensitiveParameter] RequestInterface $request): ClientResponse => RetryLoop::sendVia($client, $request),
-            fn(int $attempt, ?int $status, ?int $retryAfter): bool => $this->retryPolicy->shouldRetry($type, $attempt, $status, $retryAfter),
+            function (int $attempt, ?int $status, ?int $retryAfter) use ($type, $budget): bool {
+                $budget->record($attempt);
+
+                return $this->retryPolicy->shouldRetry($type, $attempt, $status, $retryAfter);
+            },
             fn(ClientResponse $response): ?string => $response->statusCode() >= 200 && $response->statusCode() <= 299
                 ? $this->successBody($response)
                 : null,
@@ -84,6 +90,7 @@ final readonly class HttpTransport
                 $retryAfter,
             ),
             fn(string $what, #[\SensitiveParameter] \Throwable $e): TransportException => $this->transportException($operationName, $what, $e),
+            $budget->nextAttempt(),
         );
     }
 

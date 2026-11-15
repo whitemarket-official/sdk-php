@@ -541,3 +541,18 @@ Status: implemented in PHP (0.1.0, `GuzzleClientFactory` `allow_redirects => fal
 - Why: the credential headers must never reach a host other than the base URL (section 8). A redirected POST is also a
   resent mutation (1.4).
 - Not covered: the WebSocket handshake (a non-101 answer); left to each SDK's WebSocket library and its tests.
+
+## P26. Owner decisions of 2026-11-14 (from the Python SDK's open questions)
+
+Status: approved by the owner 2026-11-14 (`../whitemarket_sdk_python/docs/plans/2026-11-14-owner-decisions.md`),
+merged into SDK_SPEC and implemented in PHP. Python already implements #22, #29, V1 r5, #30, #27; it follows #17, #18.
+
+| # | Section | Change |
+|---|---|---|
+| 17 | 3.1 | a past or within-margin `exp` counts as expired: exchange again before the next request (was: 24 h / kept 10 min) |
+| 18 | 1.4 | the 401 replay shares the call's attempt budget (was: a fresh budget, up to 2 x `maxAttempts` sends) |
+| 22 | 1.3 | redirects and client auth turned off per request where the HTTP client allows it; PHP PSR-18 cannot (DEVIATIONS) |
+| 29 | 3.3 rule 8 | reconciliation accepts a found deal only with the looked-up `customId` |
+| V1 r5 | 3.5 rules 3, 7 | batch row identity checked before money/wear decode |
+| 30 | 3.4 rules 4, 8 | `waitFor` on a monotonic clock; live early poll not before 1 s after the previous poll began |
+| 23b | 3.11 | Python uses its own Centrifugo JSON client over `websockets`, like PHP |

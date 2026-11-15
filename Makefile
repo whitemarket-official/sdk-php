@@ -188,7 +188,12 @@ ACTIONLINT_IMAGE := rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47e
 
 .PHONY: secrets-scan
 secrets-scan: ## gitleaks over the working tree (findings redacted)
-	@$(QC) secrets-scan docker run --rm -v "$(CURDIR)":/repo $(GITLEAKS_IMAGE) dir /repo --redact --no-banner \
+	@$(QC) secrets-scan docker run --rm -v "$(CURDIR)":/repo -w /repo $(GITLEAKS_IMAGE) dir . --redact --no-banner \
+		--config /repo/.gitleaks.toml
+
+.PHONY: secrets-scan-history
+secrets-scan-history: ## gitleaks over the whole git history (findings redacted)
+	@$(QC) secrets-scan-history docker run --rm -v "$(CURDIR)":/repo -w /repo $(GITLEAKS_IMAGE) git . --redact --no-banner \
 		--config /repo/.gitleaks.toml
 
 .PHONY: actionlint

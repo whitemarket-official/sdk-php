@@ -22,12 +22,6 @@ final readonly class PartnerTokenProvider implements TokenProvider
 {
     private const REFRESH_MARGIN_SECONDS = 300;
 
-    /**
-     * A token is kept at least this long, so one shorter than the margin is not exchanged on every call; if the server
-     * rejects it earlier, the 401 path renews it.
-     */
-    private const MIN_LIFETIME_SECONDS = 2 * self::REFRESH_MARGIN_SECONDS;
-
     private GeneratedClient $exchange;
 
     public function __construct(
@@ -63,8 +57,9 @@ final readonly class PartnerTokenProvider implements TokenProvider
         if (!BearerToken::isValid($token->reveal())) {
             throw new DecodeException('auth_token.accessToken', 'not a valid bearer token');
         }
-        $now = $this->clock->now();
-        $this->store->set($token, max(JwtExpiry::of($token->reveal(), $now), $now->setTimestamp($now->getTimestamp() + self::MIN_LIFETIME_SECONDS)));
+        // A token that is already expired or within the margin is still used for the request that asked for it, and is
+        // never served from the store afterwards (SDK_SPEC 3.1): the next request exchanges again.
+        $this->store->set($token, JwtExpiry::of($token->reveal(), $this->clock->now()));
 
         return $token;
     }

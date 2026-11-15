@@ -6,6 +6,7 @@ namespace WhiteMarket\Sdk\Buying;
 
 use WhiteMarket\Sdk\Errors\AuthenticationException;
 use WhiteMarket\Sdk\Errors\BadRequestException;
+use WhiteMarket\Sdk\Errors\DecodeException;
 use WhiteMarket\Sdk\Errors\GraphQLException;
 use WhiteMarket\Sdk\Errors\MutationRejection;
 use WhiteMarket\Sdk\Errors\NotFoundException;
@@ -20,6 +21,7 @@ use WhiteMarket\Sdk\Generated\Input\MoneyInput;
 use WhiteMarket\Sdk\Generated\Input\SteamLinkInput;
 use WhiteMarket\Sdk\Generated\Operation\Mutation\MarketBuy\Result;
 use WhiteMarket\Sdk\Models\App;
+use WhiteMarket\Sdk\Models\Deal;
 use WhiteMarket\Sdk\Models\DeliveryPromise;
 use WhiteMarket\Sdk\Models\ModelMapper;
 use WhiteMarket\Sdk\Models\Money;
@@ -179,13 +181,17 @@ final readonly class BuyingApi
         $lastError = null;
         for ($attempt = 0; $attempt < $this->reconciliation->attempts; ++$attempt) {
             try {
-                return new BuyResult($this->mapper->deal($this->api->dealItem(customId: $customId), 'deal_item'), $customId, true);
+                $deal = $this->mapper->deal($this->api->dealItem(customId: $customId), 'deal_item');
+
+                return new BuyResult($this->confirmedPurchase($deal, $customId, 'deal_item'), $customId, true);
             } catch (\Throwable $e) {
                 // Not there (yet), or the lookup failed: either way the archive is looked at next, and the outcome stays unknown.
                 $lastError = $this->moreTelling($lastError, $e);
             }
             try {
-                return new BuyResult($this->mapper->archivedDeal($this->api->dealHistoryItem(customId: $customId), 'deal_history_item'), $customId, true);
+                $deal = $this->mapper->archivedDeal($this->api->dealHistoryItem(customId: $customId), 'deal_history_item');
+
+                return new BuyResult($this->confirmedPurchase($deal, $customId, 'deal_history_item'), $customId, true);
             } catch (\Throwable $e) {
                 $lastError = $this->moreTelling($lastError, $e);
             }
@@ -193,6 +199,21 @@ final readonly class BuyingApi
         }
 
         throw new PurchaseOutcomeUnknownException($customId, $cause, $lastError);
+    }
+
+    /**
+     * A looked-up deal is the purchase only when it carries the customId it was looked up by, compared exactly (SDK_SPEC 3.3
+     * rule 8): a server that answered with another deal must not turn an unknown outcome into a bought one.
+     *
+     * @throws DecodeException a different or null customId, a failed lookup for the caller
+     */
+    private function confirmedPurchase(#[\SensitiveParameter] Deal $deal, string $customId, string $field): Deal
+    {
+        if ($deal->customId !== $customId) {
+            throw new DecodeException($field . '.customId', 'the deal does not carry the customId it was looked up by');
+        }
+
+        return $deal;
     }
 
     /**
