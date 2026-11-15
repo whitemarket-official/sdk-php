@@ -203,14 +203,20 @@ of at most 2048 characters each (the SDK appends to them: base + path, the SSE c
 export file paths, and HTTP libraries cap a URL's length); any other character (a control character, U+0080 and
 above, a lone surrogate) is refused at construction, and an internationalised host is given in its `xn--` form. Each URL option must also be one the SDK's HTTP library can build a
 request for, checked at construction (a bad port, an IPv4 address out of range, an `xn--` label that is not punycode).
+A port is accepted only if every layer of the SDK (HTTP client, URL parser, WebSocket library, the WS URL derived from
+`baseUrl`) reads it as the same port in 1-65535; port 0 is always refused. Whether an empty (`host:`) or zero-padded
+(`host:000443`) port is accepted follows from that rule per SDK (Python accepts both, PHP refuses both; owner decision
+2026-11-15, Python #44).
 `sseUrl` and `wsUrl` hold no fragment, and a bare trailing `#` counts as one (the SSE connect query appended after it
 would become the fragment and never reach the server). `sseUrl` takes no query of its own: the SDK appends
 `?cf_connect=...`, so a given query breaks the connect. This is documented in the README; an SDK may also refuse a
 query at construction, but is not required to (owner decision 2026-11-15, #42; Python documents it only).
 Reason: URL parsers accept or silently drop such values, the HTTP library refuses them only when it builds a request
 (for SSE one that holds the live token, so its error can print the token), and a live session would retry such a URL
-for ever. The GraphQL transport reports a failure to build a request by the library error's class name only, never
-chained, and does not retry it. [Proposed by the Python SDK 2026-11-15; adopted by PHP 2026-11-15.]
+for ever. The GraphQL and the export transports report a failure to build a request by the library error's class name
+only, never chained, and do not retry it: building fails the same way on every attempt and is not a network failure
+(owner decision 2026-11-15, export added; PHP does it, Python to adopt). [Proposed by the Python SDK 2026-11-15;
+adopted by PHP 2026-11-15.]
 
 ### TokenStore
 

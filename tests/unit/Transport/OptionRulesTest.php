@@ -153,6 +153,8 @@ final class OptionRulesTest extends TestCase
         yield 'port 65536' => ['https://api.example:65536', false];
         yield 'port 65535' => ['https://api.example:65535', true];
         yield 'port 0' => ['https://api.example:0', false];
+        yield 'port 00' => ['https://api.example:00', false];
+        yield 'port with a sign' => ['https://api.example:+443', false];
         yield 'port 1' => ['https://api.example:1', true];
         yield 'port 8443' => ['https://api.example:8443', true];
         yield 'six digit port' => ['https://api.example:000443', false];
@@ -258,6 +260,37 @@ final class OptionRulesTest extends TestCase
         yield 'Https' => ['Https://api.example/', '/ws', 'wss://api.example/ws'];
         yield 'http' => ['http://127.0.0.1:8080', '/ws', 'ws://127.0.0.1:8080/ws'];
         yield 'HTTP' => ['HTTP://127.0.0.1:8080', '/ws', 'ws://127.0.0.1:8080/ws'];
+        yield 'the port of the base URL is kept' => ['https://api.example:8443', '/ws', 'wss://api.example:8443/ws'];
+    }
+
+    /**
+     * Every URL option that takes an origin reads the port through the same rule (PARITY T4). Observed 2026-11-15:
+     * the PHP layers read an empty and a zero-padded port differently (`https://h:` is the default port for psr7 and
+     * port 0 for phrity; `:000443` is refused by psr7 and by `parse_url()`), so both are refused, unlike in Python.
+     *
+     * @return iterable<string, array{string, \Closure(string): object}>
+     */
+    public static function refusedPortsPerOption(): iterable
+    {
+        $constructors = [
+            'TransportOptions' => static fn(string $v): object => new TransportOptions(baseUrl: $v),
+            'ExportOptions' => static fn(string $v): object => new ExportOptions(baseUrl: $v),
+        ];
+        foreach (['0', '00', '65536', '+443', '', '000443'] as $port) {
+            foreach ($constructors as $class => $make) {
+                yield \sprintf('%s port "%s"', $class, $port) => ['https://api.example:' . $port, $make];
+            }
+        }
+    }
+
+    /**
+     * @param \Closure(string): object $make
+     */
+    #[Test]
+    #[DataProvider('refusedPortsPerOption')]
+    public function refusesAPortTheLayersReadDifferentlyForEveryOriginOption(string $baseUrl, \Closure $make): void
+    {
+        self::assertSame('baseUrl is not a valid URL.', $this->refusal(static fn() => $make($baseUrl)));
     }
 
     #[Test]
