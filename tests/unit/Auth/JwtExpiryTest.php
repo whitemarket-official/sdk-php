@@ -94,6 +94,8 @@ final class JwtExpiryTest extends TestCase
         yield 'clock at 199.999999 -> expired' => ['@199.999999', 200, '199.999999'];
         yield 'clock at 150.000001 -> exp minus 999999 us' => ['@150.000001', 200, '199.000001'];
         yield 'before 1970, -1.5 -> rounds up to -1' => ['@-1.5', 9, '8.500000'];
+        // Rounding up would leave the integer range; the clock stays in its last second, which is not before exp.
+        yield 'clock in the last second of the integer range -> expired' => ['@' . \PHP_INT_MAX . '.5', \PHP_INT_MAX, \PHP_INT_MAX . '.500000'];
     }
 
     #[Test]

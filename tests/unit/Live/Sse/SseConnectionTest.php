@@ -77,6 +77,29 @@ final class SseConnectionTest extends TestCase
         $connection->open(new Secret($this->jwt), $channels, $this->timeout());
     }
 
+    /**
+     * The open timeout is a deadline: once it is spent, no further read waits for the reply, even one already sent.
+     */
+    #[Test]
+    public function aSpentOpenTimeoutFailsWithoutReadingTheReply(): void
+    {
+        $connection = $this->connection(new FakeHttpClient($this->ok(self::CONNECT)));
+
+        $this->expectException(TransportException::class);
+        $this->expectExceptionMessage('The live connection sent no connect reply in time.');
+
+        $connection->open(new Secret($this->jwt), ['market_products_updates'], 0.0);
+    }
+
+    #[Test]
+    public function buildsTheConnectUrlFromTheOriginThePathAndTheEncodedCommand(): void
+    {
+        self::assertSame(
+            'https://api.example/sse?cf_connect=%7B%22token%22%3A%22a%20b%22%7D',
+            SseConnection::url('https://api.example/', '/sse', '{"token":"a b"}'),
+        );
+    }
+
     #[Test]
     public function sendsOneGetWithTheTokenAndChannelsInTheQuery(): void
     {

@@ -86,6 +86,45 @@ final class OptionRulesTest extends TestCase
     }
 
     /**
+     * Without the `D` modifier `$` also matches before a final line feed; the later patterns would then refuse the
+     * value with another message, so the message tells which rule caught it.
+     *
+     * @param \Closure(string): object $make
+     */
+    #[Test]
+    #[DataProvider('options')]
+    public function refusesAFinalLineFeedAsOutsidePrintableAscii(string $name, bool $origin, \Closure $make): void
+    {
+        $value = ($origin ? 'https://api.example.test' : '/graphql') . "\n";
+
+        self::assertSame(
+            $name . ' must be printable ASCII (an internationalised host in its xn-- form).',
+            $this->refusal(static fn() => $make($value)),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function originsWithAPathQueryOrFragment(): iterable
+    {
+        yield 'path' => ['https://api.example/v1'];
+        yield 'query' => ['https://api.example?x=1'];
+        yield 'fragment' => ['https://api.example#top'];
+        yield 'path after a port' => ['https://api.example:8443/v1'];
+    }
+
+    #[Test]
+    #[DataProvider('originsWithAPathQueryOrFragment')]
+    public function refusesAnOriginWithAPathQueryOrFragment(string $baseUrl): void
+    {
+        self::assertSame(
+            'baseUrl must be an https:// origin without a path, query or fragment.',
+            $this->refusal(static fn() => OptionRules::assertHttpsOrigin($baseUrl)),
+        );
+    }
+
+    /**
      * @return iterable<string, array{string, bool, \Closure(string): object, string}>
      */
     public static function optionsWithAcceptedValues(): iterable
@@ -251,19 +290,6 @@ final class OptionRulesTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, string, string}>
-     */
-    public static function webSocketUrls(): iterable
-    {
-        yield 'https' => ['https://api.example', '/ws', 'wss://api.example/ws'];
-        yield 'HTTPS' => ['HTTPS://api.example', '/ws', 'wss://api.example/ws'];
-        yield 'Https' => ['Https://api.example/', '/ws', 'wss://api.example/ws'];
-        yield 'http' => ['http://127.0.0.1:8080', '/ws', 'ws://127.0.0.1:8080/ws'];
-        yield 'HTTP' => ['HTTP://127.0.0.1:8080', '/ws', 'ws://127.0.0.1:8080/ws'];
-        yield 'the port of the base URL is kept' => ['https://api.example:8443', '/ws', 'wss://api.example:8443/ws'];
-    }
-
-    /**
      * Every URL option that takes an origin reads the port through the same rule (PARITY T4). Observed 2026-11-15:
      * the PHP layers read an empty and a zero-padded port differently (`https://h:` is the default port for psr7 and
      * port 0 for phrity; `:000443` is refused by psr7 and by `parse_url()`), so both are refused, unlike in Python.
@@ -291,13 +317,6 @@ final class OptionRulesTest extends TestCase
     public function refusesAPortTheLayersReadDifferentlyForEveryOriginOption(string $baseUrl, \Closure $make): void
     {
         self::assertSame('baseUrl is not a valid URL.', $this->refusal(static fn() => $make($baseUrl)));
-    }
-
-    #[Test]
-    #[DataProvider('webSocketUrls')]
-    public function mapsTheSchemeToWebSocketIgnoringCase(string $baseUrl, string $path, string $expected): void
-    {
-        self::assertSame($expected, WebSocketConnection::url($baseUrl, $path));
     }
 
     #[Test]

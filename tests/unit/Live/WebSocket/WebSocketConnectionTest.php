@@ -55,6 +55,28 @@ final class WebSocketConnectionTest extends TestCase
         return $connection->open(new Secret($jwt !== '' ? $jwt : SyntheticJwt::withClaims(['sub' => '42'])), $channels, 10);
     }
 
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function webSocketUrls(): iterable
+    {
+        yield 'https' => ['https://api.example', '/ws', 'wss://api.example/ws'];
+        yield 'HTTPS' => ['HTTPS://api.example', '/ws', 'wss://api.example/ws'];
+        yield 'Https with a trailing slash' => ['Https://api.example/', '/ws', 'wss://api.example/ws'];
+        yield 'http' => ['http://127.0.0.1:8080', '/ws', 'ws://127.0.0.1:8080/ws'];
+        yield 'HTTP' => ['HTTP://127.0.0.1:8080', '/ws', 'ws://127.0.0.1:8080/ws'];
+        yield 'the port of the base URL is kept' => ['https://api.example:8443', '/ws', 'wss://api.example:8443/ws'];
+        yield 'the path is appended as given' => ['https://api.example', '/connection/websocket', 'wss://api.example/connection/websocket'];
+        yield 'a base URL already in WebSocket form is kept' => ['wss://api.example', '/ws', 'wss://api.example/ws'];
+    }
+
+    #[Test]
+    #[DataProvider('webSocketUrls')]
+    public function mapsTheSchemeToWebSocketIgnoringCase(string $baseUrl, string $path, string $expected): void
+    {
+        self::assertSame($expected, WebSocketConnection::url($baseUrl, $path));
+    }
+
     #[Test]
     public function opensWithAConnectCommandTheServerAcceptsAndReturnsTheConnectInfo(): void
     {
