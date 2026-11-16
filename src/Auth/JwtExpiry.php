@@ -6,7 +6,8 @@ namespace WhiteMarket\Sdk\Auth;
 
 /**
  * When an access token expires, read from the JWT payload without verifying the signature (the SDK has no key;
- * WHITEMARKET_API.md 3). The lifetime is `exp - now` by the local clock, and never more than `exp - iat` when both
+ * WHITEMARKET_API.md 3). The lifetime is `exp - now` by the local clock (taken in UTC and rounded UP to whole seconds, so the expiry is the
+ * exact clock plus that lifetime: never past `exp`, at most 1 s before it), and never more than `exp - iat` when both
  * are present, so a token never outlives its `exp` and a host clock behind the issuer does not lengthen it. An `exp`
  * in the past gives 0; with the provider's refresh margin, an `exp` within 5 minutes counts as expired too, and the
  * token is exchanged again before the next request instead of after a 401 (SDK_SPEC 3.1). A non-integer NumericDate
@@ -23,7 +24,19 @@ final class JwtExpiry
 
     public static function of(#[\SensitiveParameter] string $jwt, \DateTimeImmutable $now): \DateTimeImmutable
     {
-        return $now->setTimestamp($now->getTimestamp() + self::lifetimeSeconds($jwt, $now->getTimestamp()));
+        $utc = $now->setTimezone(new \DateTimeZone('UTC'));
+
+        return $utc->add(new \DateInterval(\sprintf('PT%dS', self::lifetimeSeconds($jwt, self::secondsRoundedUp($utc)))));
+    }
+
+    /**
+     * The clock in whole seconds, rounded up. getTimestamp() floors, also before 1970.
+     */
+    private static function secondsRoundedUp(\DateTimeImmutable $clock): int
+    {
+        $seconds = $clock->getTimestamp();
+
+        return $seconds < \PHP_INT_MAX && (int) $clock->format('u') > 0 ? $seconds + 1 : $seconds;
     }
 
     private static function lifetimeSeconds(#[\SensitiveParameter] string $jwt, int $now): int

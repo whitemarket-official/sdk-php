@@ -46,6 +46,7 @@ final readonly class HttpTransport
         Sleeper $sleeper = new SystemSleeper(),
         RandomSource $random = new SystemRandomSource(),
     ) {
+        OptionRules::assertBuildable($requestFactory, 'baseUrl with graphqlPath', $options->graphqlUrl());
         $this->retryLoop = new RetryLoop($retryPolicy, $clock, $sleeper, $random, SafeLogger::wrap($logger));
     }
 
@@ -56,7 +57,7 @@ final readonly class HttpTransport
      * @return string the body of the 2xx response
      *
      * @throws HttpException the final response had a non-2xx status
-     * @throws TransportException no response, or its body could not be read
+     * @throws TransportException no response, its body could not be read, or the request could not be built
      */
     public function post(
         string $operationName,
@@ -99,17 +100,34 @@ final readonly class HttpTransport
      */
     private function request(#[\SensitiveParameter] string $body, #[\SensitiveParameter] array $headers): RequestInterface
     {
-        $request = $this->requestFactory->createRequest('POST', $this->options->graphqlUrl())
-            ->withHeader('Content-Type', 'application/json')
-            ->withHeader('Accept', 'application/json')
-            ->withHeader('Accept-Encoding', 'gzip')
-            ->withHeader('User-Agent', $this->options->userAgent())
-            ->withBody($this->streamFactory->createStream($body));
+        $request = $this->baseRequest($body);
         foreach ($headers as $name => $value) {
             $request = $this->withCredentialHeader($request, $name, $value->reveal());
         }
 
         return $request;
+    }
+
+    /**
+     * Whatever the PSR-17 factories or the PSR-7 message throw while the request is built (a stricter implementation
+     * than the checks of the options, a failing stream) becomes a transport error that names the class only: such a
+     * message may quote the body or the URL. It is not retried.
+     *
+     * @throws TransportException
+     */
+    private function baseRequest(#[\SensitiveParameter] string $body): RequestInterface
+    {
+        try {
+            return $this->requestFactory->createRequest('POST', $this->options->graphqlUrl())
+                ->withHeader('Content-Type', 'application/json')
+                ->withHeader('Accept', 'application/json')
+                ->withHeader('Accept-Encoding', 'gzip')
+                ->withHeader('User-Agent', $this->options->userAgent())
+                ->withBody($this->streamFactory->createStream($body));
+        } catch (\Throwable $e) {
+            // The PSR-7 message may quote the URL.
+            throw Failure::named('The GraphQL request could not be built', $e);
+        }
     }
 
     private function clientFor(OperationType $type): ClientInterface

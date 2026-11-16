@@ -19,6 +19,7 @@ use WhiteMarket\Sdk\Errors\GraphQLException;
 use WhiteMarket\Sdk\Errors\NotFoundException;
 use WhiteMarket\Sdk\Errors\ServiceUnavailableException;
 use WhiteMarket\Sdk\Generated\GeneratedClient;
+use WhiteMarket\Sdk\GraphQL\Decode;
 use WhiteMarket\Sdk\GraphQL\GraphQLExecutor;
 use WhiteMarket\Sdk\GraphQL\OperationType;
 use WhiteMarket\Sdk\Tests\Support\FakeHttpClient;
@@ -72,6 +73,21 @@ final class GraphQLExecutorTest extends TestCase
         $http = new FakeHttpClient(FakeHttpClient::status(200, '{"data":{"assetId":123456789012345678901234567890}}'));
 
         self::assertSame(['assetId' => '123456789012345678901234567890'], $this->executor($http)->execute('query Q { assetId }', 'Q', OperationType::Query, []));
+    }
+
+    /**
+     * `json_decode` turns `1e400` into INF; the Float decoder (a generated `fade`) must not hand that to the caller.
+     */
+    #[Test]
+    public function rejectsAFloatOutsideTheFloatRangeWhenDecodingTheResponse(): void
+    {
+        $http = new FakeHttpClient(FakeHttpClient::status(200, '{"data":{"fade":1e400}}'));
+        $data = $this->executor($http)->execute('query Q { fade }', 'Q', OperationType::Query, []);
+
+        $e = TraceArguments::caught(static fn(): float => Decode::field($data, 'fade', '', Decode::float(...)));
+
+        self::assertInstanceOf(DecodeException::class, $e);
+        self::assertSame('fade', $e->path);
     }
 
     #[Test]

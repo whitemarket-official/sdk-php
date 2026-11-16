@@ -20,6 +20,8 @@ use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\AbstractLogger;
 use WhiteMarket\Sdk\Auth\Secret;
@@ -38,6 +40,7 @@ use WhiteMarket\Sdk\Tests\Support\FixedRandomSource;
 use WhiteMarket\Sdk\Tests\Support\FrozenClock;
 use WhiteMarket\Sdk\Tests\Support\MemoryLogger;
 use WhiteMarket\Sdk\Tests\Support\RecordingSleeper;
+use WhiteMarket\Sdk\Tests\Support\ThrowingRequestFactory;
 use WhiteMarket\Sdk\Tests\Support\TraceArguments;
 use WhiteMarket\Sdk\Transport\HttpClients;
 use WhiteMarket\Sdk\Transport\HttpTransport;
@@ -714,6 +717,73 @@ final class HttpTransportTest extends TestCase
 
         self::assertSame('{"data":{}}', $transport->post('Q', OperationType::Query, self::BODY, []));
         self::assertCount(2, $http->requests());
+    }
+
+    /**
+     * @return iterable<string, array{OperationType, string}>
+     */
+    public static function buildFailures(): iterable
+    {
+        yield 'query, request factory refuses' => [OperationType::Query, 'request factory'];
+        yield 'mutation, request factory refuses' => [OperationType::Mutation, 'request factory'];
+        yield 'query, stream factory refuses' => [OperationType::Query, 'stream factory'];
+        yield 'mutation, stream factory refuses' => [OperationType::Mutation, 'stream factory'];
+    }
+
+    #[Test]
+    #[DataProvider('buildFailures')]
+    public function reportsARequestThatCannotBeBuiltAsATransportErrorWithoutRetryingOrRevealingIt(OperationType $type, string $refusing): void
+    {
+        $http = new FakeHttpClient(FakeHttpClient::status(200, '{"data":{}}'));
+        $message = 'Unable to parse URI or body for ' . self::TOKEN;
+        // The GET probe of the constructor passes; only the POST of the transport is refused.
+        $requestFactory = ThrowingRequestFactory::refusing($message, $refusing === 'request factory' ? 'POST' : 'DELETE');
+        $streamFactory = $refusing === 'stream factory'
+            ? new class ($message) implements StreamFactoryInterface {
+                public function __construct(private readonly string $message) {}
+
+                public function createStream(string $content = ''): StreamInterface
+                {
+                    throw new \RuntimeException($this->message);
+                }
+
+                public function createStreamFromFile(string $filename, string $mode = 'r'): StreamInterface
+                {
+                    throw new \LogicException('not used');
+                }
+
+                public function createStreamFromResource($resource): StreamInterface
+                {
+                    throw new \LogicException('not used');
+                }
+            }
+        : new HttpFactory();
+        $transport = new HttpTransport(
+            new HttpClients($http, $http),
+            $requestFactory,
+            $streamFactory,
+            logger: $this->logger,
+            sleeper: $this->sleeper,
+            random: new FixedRandomSource(0.5),
+        );
+
+        $e = TraceArguments::caught(static fn(): string => $transport->post('Q', $type, self::BODY, ['Authorization' => new Secret('Bearer ' . self::TOKEN)]));
+
+        TraceArguments::assertOpaque($e, TransportException::class, 'The GraphQL request could not be built (RuntimeException).', self::TOKEN);
+        self::assertSame([], $http->requests(), 'nothing is sent');
+        self::assertSame([], $this->sleeper->delays(), 'nothing is retried');
+        self::assertSame(['GET', 'POST'], array_column($requestFactory->calls(), 0), 'the constructor probes once, the request is built once');
+    }
+
+    #[Test]
+    public function refusesAnEndpointTheRequestFactoryCannotBuildWhenTheTransportIsCreated(): void
+    {
+        $factory = ThrowingRequestFactory::refusingEvery('Unable to parse URI: https://api.white.market/graphql/partner ' . self::TOKEN);
+
+        $e = TraceArguments::caught(fn(): HttpTransport => $this->transport(new FakeHttpClient(), requestFactory: $factory));
+
+        TraceArguments::assertOpaque($e, \InvalidArgumentException::class, 'baseUrl with graphqlPath is not a valid URL.', self::TOKEN);
+        self::assertSame([['GET', 'https://api.white.market/graphql/partner']], $factory->calls());
     }
 
     /**

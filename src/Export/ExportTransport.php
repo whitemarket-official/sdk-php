@@ -16,6 +16,7 @@ use WhiteMarket\Sdk\Errors\TransportException;
 use WhiteMarket\Sdk\Transport\BodyReader;
 use WhiteMarket\Sdk\Transport\ClientResponse;
 use WhiteMarket\Sdk\Transport\Clock;
+use WhiteMarket\Sdk\Transport\Failure;
 use WhiteMarket\Sdk\Transport\RandomSource;
 use WhiteMarket\Sdk\Transport\RetryLoop;
 use WhiteMarket\Sdk\Transport\RetryPolicy;
@@ -195,17 +196,22 @@ final readonly class ExportTransport
      */
     private function request(string $url, ?array $validators): RequestInterface
     {
-        $request = $this->requestFactory->createRequest('GET', $url)
-            ->withHeader('Accept-Encoding', 'gzip')
-            ->withHeader('User-Agent', $this->options->userAgent());
-        if ($validators !== null && $validators['etag'] !== null) {
-            $request = $request->withHeader('If-None-Match', $validators['etag']);
-        }
-        if ($validators !== null && $validators['lastModified'] !== null) {
-            $request = $request->withHeader('If-Modified-Since', $validators['lastModified']);
-        }
+        try {
+            $request = $this->requestFactory->createRequest('GET', $url)
+                ->withHeader('Accept-Encoding', 'gzip')
+                ->withHeader('User-Agent', $this->options->userAgent());
+            if ($validators !== null && $validators['etag'] !== null) {
+                $request = $request->withHeader('If-None-Match', $validators['etag']);
+            }
+            if ($validators !== null && $validators['lastModified'] !== null) {
+                $request = $request->withHeader('If-Modified-Since', $validators['lastModified']);
+            }
 
-        return $request;
+            return $request;
+        } catch (\Throwable $e) {
+            // The PSR-7 message may quote the URL.
+            throw Failure::named('The export request could not be built', $e);
+        }
     }
 
     /**

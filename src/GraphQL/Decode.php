@@ -98,7 +98,13 @@ final class Decode
             throw new DecodeException($path, 'expected a number, got ' . get_debug_type($value));
         }
 
-        return (float) $value;
+        $float = (float) $value;
+        if (!is_finite($float)) {
+            // `1e400` decodes to INF; the value itself stays out of the message.
+            throw new DecodeException($path, 'expected a finite number, got ' . get_debug_type($value));
+        }
+
+        return $float;
     }
 
     public static function bool(#[\SensitiveParameter] mixed $value, string $path): bool

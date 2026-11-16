@@ -31,6 +31,7 @@ use WhiteMarket\Sdk\Tests\Support\FakeHttpClient;
 use WhiteMarket\Sdk\Tests\Support\MemoryLogger;
 use WhiteMarket\Sdk\Tests\Support\RecordingSleeper;
 use WhiteMarket\Sdk\Tests\Support\TestExport;
+use WhiteMarket\Sdk\Tests\Support\ThrowingRequestFactory;
 use WhiteMarket\Sdk\Tests\Support\TraceArguments;
 use WhiteMarket\Sdk\Transport\RetryLoop;
 use WhiteMarket\Sdk\Version;
@@ -571,6 +572,21 @@ final class ExportTransportTest extends TestCase
         $this->transport($http, options: $options)->get('https://export.example.test:8443/v1/prices/730.json');
 
         self::assertSame('https://export.example.test:8443/v1/x', (string) $http->lastRequest()->getUri());
+    }
+
+    #[Test]
+    public function reportsARequestThatCannotBeBuiltAsATransportErrorWithoutRetryingOrRevealingIt(): void
+    {
+        $http = new FakeHttpClient(FakeHttpClient::status(200, '{}'));
+        $factory = ThrowingRequestFactory::refusingEvery('Unable to parse URI: ' . self::URL . ' synthetic-token-5d1e');
+        $transport = new ExportTransport($http, $factory, sleeper: $this->sleeper);
+
+        $e = TraceArguments::caught(static fn(): ExportBody => $transport->get(self::URL));
+
+        TraceArguments::assertOpaque($e, TransportException::class, 'The export request could not be built (RuntimeException).', 'synthetic-token-5d1e');
+        self::assertSame([], $http->requests());
+        self::assertSame([['GET', self::URL]], $factory->calls(), 'built once, not retried');
+        self::assertSame([], $this->sleeper->delays());
     }
 
     /**

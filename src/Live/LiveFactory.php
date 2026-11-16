@@ -12,6 +12,7 @@ use WhiteMarket\Sdk\Live\Sse\SseConnection;
 use WhiteMarket\Sdk\Live\WebSocket\WebSocketConnection;
 use WhiteMarket\Sdk\Transport\Clock;
 use WhiteMarket\Sdk\Transport\GuzzleClientFactory;
+use WhiteMarket\Sdk\Transport\OptionRules;
 use WhiteMarket\Sdk\Transport\RandomSource;
 use WhiteMarket\Sdk\Transport\Sleeper;
 use WhiteMarket\Sdk\Transport\SystemClock;
@@ -37,8 +38,19 @@ final readonly class LiveFactory
         private RandomSource $random = new SystemRandomSource(),
     ) {}
 
+    /**
+     * @throws \InvalidArgumentException the request factory cannot build the URL of the chosen transport
+     */
     public function create(LiveOptions $options): Live
     {
+        // The WS URL is probed with the PSR-17 factory as a URL check only: the WebSocket library parses it itself (its own
+        // refusals, a bad port and an empty host, are covered by OptionRules). The SSE URL gets a placeholder connect
+        // command: the real one carries the token and is built at connect time.
+        [$option, $url] = match ($options->transport) {
+            LiveTransport::WebSocket => ['wsPath', WebSocketConnection::url($this->baseUrl, $options->wsPath)],
+            LiveTransport::Sse => ['ssePath', SseConnection::url($this->baseUrl, $options->ssePath, '{}')],
+        };
+        OptionRules::assertBuildable($this->requestFactory, $option, $url);
         $connection = match ($options->transport) {
             LiveTransport::WebSocket => fn(): Connection => new WebSocketConnection($this->baseUrl, $options),
             LiveTransport::Sse => fn(): Connection => new SseConnection(

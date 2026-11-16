@@ -213,7 +213,7 @@ final class WebSocketConnection implements Connection
     private function connect(float $deadline): void
     {
         try {
-            $uri = $this->uri();
+            $uri = self::url($this->baseUrl, $this->options->wsPath);
             $configuration = $this->configuration($uri);
             $factory = new CapturingStreamFactory($this->options->connectTimeout);
             $factory->setDeadline($deadline);
@@ -249,16 +249,20 @@ final class WebSocketConnection implements Connection
         );
     }
 
-    private function uri(): string
+    /**
+     * The WebSocket URL of an API origin: `https` becomes `wss`, `http` becomes `ws`.
+     */
+    public static function url(string $baseUrl, string $wsPath): string
     {
-        $base = rtrim($this->baseUrl, '/');
+        $base = rtrim($baseUrl, '/');
+        // The scheme is case-insensitive (RFC 3986 3.1) and OptionRules accepts `HTTPS://`; phrity wants `ws` or `wss`.
         $base = match (true) {
-            str_starts_with($base, 'https://') => 'wss://' . substr($base, 8),
-            str_starts_with($base, 'http://') => 'ws://' . substr($base, 7),
+            strncasecmp($base, 'https://', 8) === 0 => 'wss://' . substr($base, 8),
+            strncasecmp($base, 'http://', 7) === 0 => 'ws://' . substr($base, 7),
             default => $base,
         };
 
-        return $base . $this->options->wsPath;
+        return $base . $wsPath;
     }
 
     /**

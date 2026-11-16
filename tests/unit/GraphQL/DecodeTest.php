@@ -32,6 +32,9 @@ final class DecodeTest extends TestCase
         yield 'int zero' => [Decode::int(...), 0, 0];
         yield 'float' => [Decode::float(...), 0.25, 0.25];
         yield 'float from a JSON integer' => [Decode::float(...), 3, 3.0];
+        yield 'large finite float' => [Decode::float(...), 1e300, 1e300];
+        yield 'largest finite float' => [Decode::float(...), \PHP_FLOAT_MAX, \PHP_FLOAT_MAX];
+        yield 'largest integer' => [Decode::float(...), \PHP_INT_MAX, (float) \PHP_INT_MAX];
         yield 'bool true' => [Decode::bool(...), true, true];
         yield 'bool false' => [Decode::bool(...), false, false];
     }
@@ -95,6 +98,9 @@ final class DecodeTest extends TestCase
         yield 'string from an int' => [Decode::string(...), 1, 'expected a string, got int'];
         yield 'int from a numeric string' => [Decode::int(...), '1', 'expected an integer, got string'];
         yield 'float from null' => [Decode::float(...), null, 'expected a number, got null'];
+        yield 'float from INF' => [Decode::float(...), \INF, 'expected a finite number, got float'];
+        yield 'float from -INF' => [Decode::float(...), -\INF, 'expected a finite number, got float'];
+        yield 'float from NAN' => [Decode::float(...), \NAN, 'expected a finite number, got float'];
         yield 'bool from an int' => [Decode::bool(...), 1, 'expected a boolean, got int'];
         yield 'list from an object' => [Decode::listOf(Decode::int(...)), ['a' => 1], 'expected a list, got array'];
         yield 'list from a string' => [Decode::listOf(Decode::int(...)), 'x', 'expected a list, got string'];

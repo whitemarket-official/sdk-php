@@ -32,6 +32,22 @@ final class TraceArguments
     }
 
     /**
+     * Asserts that an exception is opaque: the expected class and message, no previous exception, and `$secret` in
+     * neither the message, the trace string nor the exported or printed SDK frames.
+     *
+     * @param class-string<\Throwable> $class
+     */
+    public static function assertOpaque(\Throwable $e, string $class, string $message, string $secret): void
+    {
+        Assert::assertInstanceOf($class, $e);
+        Assert::assertSame($message, $e->getMessage());
+        Assert::assertNull($e->getPrevious());
+        foreach ([$e->getMessage(), $e->getTraceAsString(), self::exportedSdkFrames($e), self::printedSdkFrames($e)] as $printed) {
+            Assert::assertStringNotContainsString($secret, $printed);
+        }
+    }
+
+    /**
      * The frames from the first SDK frame up to the first one that belongs to the test side: a test class
      * (`Tests\Unit`) or a class outside the SDK (PHPUnit, `ReflectionClass::newInstanceArgs`). The frames below hold
      * the credential by construction; the ones above the first SDK frame are user code the SDK called (a throwing

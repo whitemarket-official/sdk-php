@@ -25,6 +25,9 @@ final readonly class ConnectInfo
     /** Upper bound for a server ping interval, so a hostile value cannot disable the idle deadline. */
     public const MAX_PING_SECONDS = 300;
 
+    /** Upper bound for the token lifetime of a connect reply: one year (SDK_SPEC 3.11). */
+    public const MAX_TTL_SECONDS = 31_536_000;
+
     /** Seconds past the server ping interval after which a silent connection counts as dead (like centrifuge-js). */
     public const IDLE_GRACE_SECONDS = 10;
 
@@ -79,8 +82,16 @@ final readonly class ConnectInfo
         return new self(
             $reply->ping !== null && $reply->ping > 0 ? min($reply->ping, self::MAX_PING_SECONDS) : self::DEFAULT_PING_SECONDS,
             $reply->pong,
-            $reply->expires ? $reply->ttl : null,
+            $reply->expires ? self::clampTtl($reply->ttl) : null,
             $reply->subs,
         );
+    }
+
+    /**
+     * Clamps to 0 .. MAX_TTL_SECONDS.
+     */
+    private static function clampTtl(?int $ttl): ?int
+    {
+        return $ttl === null ? null : max(0, min($ttl, self::MAX_TTL_SECONDS));
     }
 }

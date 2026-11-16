@@ -25,6 +25,7 @@ use WhiteMarket\Sdk\Export\Rows\YajlStreamRows;
 use WhiteMarket\Sdk\Transport\BodyReader;
 use WhiteMarket\Sdk\Transport\Clock;
 use WhiteMarket\Sdk\Transport\GuzzleClientFactory;
+use WhiteMarket\Sdk\Transport\OptionRules;
 use WhiteMarket\Sdk\Transport\RetryPolicy;
 use WhiteMarket\Sdk\Transport\SystemClock;
 
@@ -72,11 +73,13 @@ final readonly class ExportClient
         LoggerInterface $logger = new NullLogger(),
     ): self {
         $messageFactory = GuzzleClientFactory::messageFactory();
+        $requestFactory ??= $messageFactory;
+        OptionRules::assertBuildable($requestFactory, 'baseUrl', $options->baseUrl);
 
         return new self(
             new ExportTransport(
                 $httpClient ?? GuzzleClientFactory::createForExports($options),
-                $requestFactory ?? $messageFactory,
+                $requestFactory,
                 $options,
                 $cache,
                 $retryPolicy,

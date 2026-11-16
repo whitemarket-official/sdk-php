@@ -21,6 +21,7 @@ use WhiteMarket\Sdk\Errors\RateLimitException;
 use WhiteMarket\Sdk\Errors\ServiceUnavailableException;
 use WhiteMarket\Sdk\Errors\TransportException;
 use WhiteMarket\Sdk\Live\LiveOptions;
+use WhiteMarket\Sdk\Live\ServerClosed;
 use WhiteMarket\Sdk\Live\Sse\SseConnection;
 use WhiteMarket\Sdk\Tests\Support\ChunkedStream;
 use WhiteMarket\Sdk\Tests\Support\FakeHttpClient;
@@ -76,6 +77,29 @@ final class SseConnectionTest extends TestCase
         $connection->open(new Secret($this->jwt), $channels, $this->timeout());
     }
 
+    /**
+     * The open timeout is a deadline: once it is spent, no further read waits for the reply, even one already sent.
+     */
+    #[Test]
+    public function aSpentOpenTimeoutFailsWithoutReadingTheReply(): void
+    {
+        $connection = $this->connection(new FakeHttpClient($this->ok(self::CONNECT)));
+
+        $this->expectException(TransportException::class);
+        $this->expectExceptionMessage('The live connection sent no connect reply in time.');
+
+        $connection->open(new Secret($this->jwt), ['market_products_updates'], 0.0);
+    }
+
+    #[Test]
+    public function buildsTheConnectUrlFromTheOriginThePathAndTheEncodedCommand(): void
+    {
+        self::assertSame(
+            'https://api.example/sse?cf_connect=%7B%22token%22%3A%22a%20b%22%7D',
+            SseConnection::url('https://api.example/', '/sse', '{"token":"a b"}'),
+        );
+    }
+
     #[Test]
     public function sendsOneGetWithTheTokenAndChannelsInTheQuery(): void
     {
@@ -129,6 +153,16 @@ final class SseConnectionTest extends TestCase
         self::assertSame(86400, $info->ttl);
         self::assertSame(86400, $info->ttl);
         self::assertSame(['broadcast'], $info->subs);
+    }
+
+    #[Test]
+    public function clampsAConnectTtlBeyondSixtyFourBitsInsteadOfTimingOut(): void
+    {
+        $connect = "data: {\"connect\":{\"ping\":30,\"expires\":true,\"ttl\":1" . str_repeat('0', 400) . ",\"subs\":{}}}\n\n";
+
+        $info = $this->connection(new FakeHttpClient($this->ok($connect)))->open(new Secret($this->jwt), [], $this->timeout());
+
+        self::assertSame(31536000, $info->ttl);
     }
 
     /**
@@ -273,6 +307,160 @@ final class SseConnectionTest extends TestCase
         } finally {
             self::assertTrue($stream->wasClosed());
         }
+    }
+
+    private const PUB_A = '{"channel":"ch","pub":{"data":{"message":"a"}}}';
+
+    private const PUB_B = '{"channel":"ch","pub":{"data":{"message":"b"}}}';
+
+    #[Test]
+    public function keepsPublicationsThatArriveBeforeTheConnectReplyAndDeliversThemInOrder(): void
+    {
+        $connection = $this->connection(new FakeHttpClient($this->ok(self::EVENT_A . self::EVENT_B . self::CONNECT . self::EVENT_A)));
+
+        $info = $connection->open(new Secret($this->jwt), [], $this->timeout());
+
+        self::assertSame(30, $info->ping);
+        self::assertSame(self::PUB_A, $connection->read($this->timeout()));
+        self::assertSame(self::PUB_B, $connection->read($this->timeout()));
+        self::assertSame(self::PUB_A, $connection->read($this->timeout()));
+    }
+
+    #[Test]
+    public function returnsKeptMessagesEvenWithAZeroTimeout(): void
+    {
+        $connection = $this->connection(new FakeHttpClient($this->ok(self::EVENT_A . self::CONNECT)));
+        $this->open($connection);
+
+        self::assertSame(self::PUB_A, $connection->read(0.0));
+    }
+
+    #[Test]
+    public function acceptsMoreThanSixtyFourEarlyMessages(): void
+    {
+        $connection = $this->connection(new FakeHttpClient($this->ok(str_repeat(self::EVENT_A, 200) . self::CONNECT . self::EVENT_B)));
+
+        $this->open($connection);
+
+        for ($i = 0; $i < 200; ++$i) {
+            self::assertSame(self::PUB_A, $connection->read($this->timeout()));
+        }
+        self::assertSame(self::PUB_B, $connection->read($this->timeout()));
+    }
+
+    #[Test]
+    public function aMalformedEarlyMessageDoesNotFailOpenAndKeepsItsPosition(): void
+    {
+        $connection = $this->connection(new FakeHttpClient($this->ok(self::EVENT_A . "data: nonsense\n\n" . self::EVENT_B . self::CONNECT)));
+
+        $this->open($connection);
+
+        self::assertSame(self::PUB_A, $connection->read($this->timeout()));
+        self::assertSame('nonsense', $connection->read($this->timeout()));
+        self::assertSame(self::PUB_B, $connection->read($this->timeout()));
+    }
+
+    #[Test]
+    public function aDisconnectBeforeTheConnectReplyIsServerClosed(): void
+    {
+        $stream = ChunkedStream::of(self::EVENT_A . "data: {\"disconnect\":{\"code\":3500,\"reason\":\"bye\"}}\n\n", 4096);
+        $connection = $this->connection(new FakeHttpClient($this->ok($stream)));
+
+        try {
+            $this->open($connection);
+            self::fail('expected ServerClosed');
+        } catch (ServerClosed $e) {
+            self::assertSame(3500, $e->closeCode);
+            self::assertSame('bye', $e->reason);
+            self::assertTrue($stream->wasClosed());
+        }
+    }
+
+    #[Test]
+    public function theStreamEndingAfterEarlyMessagesBeforeTheReplyFailsTheAttempt(): void
+    {
+        $stream = ChunkedStream::of(self::EVENT_A . self::EVENT_B, 4096);
+        $connection = $this->connection(new FakeHttpClient($this->ok($stream)));
+
+        try {
+            $this->open($connection);
+            self::fail('expected a TransportException');
+        } catch (TransportException $e) {
+            self::assertStringContainsString('ended', $e->getMessage());
+            self::assertTrue($stream->wasClosed());
+        }
+    }
+
+    #[Test]
+    public function noReplyInTimeAfterEarlyMessagesFailsTheAttempt(): void
+    {
+        $stream = ScriptedStream::expiringSlices([self::EVENT_A]);
+        $connection = $this->connection(new FakeHttpClient($this->ok($stream)));
+
+        $this->expectException(TransportException::class);
+        $this->expectExceptionMessage('no connect reply');
+        $connection->open(new Secret($this->jwt), [], $this->timeout(0.05));
+    }
+
+    /**
+     * @return iterable<string, array{int, bool}>
+     */
+    public static function earlyTextLimits(): iterable
+    {
+        // Two early messages of 48 bytes each.
+        yield 'one byte over the limit' => [2 * \strlen(self::PUB_A) - 1, false];
+        yield 'exactly at the limit' => [2 * \strlen(self::PUB_A), true];
+    }
+
+    #[Test]
+    #[DataProvider('earlyTextLimits')]
+    public function boundsTheTotalTextOfMessagesKeptBeforeTheReply(int $limit, bool $accepted): void
+    {
+        $stream = ChunkedStream::of(self::EVENT_A . self::EVENT_A . self::CONNECT, 4096);
+        $connection = new SseConnection(
+            new FakeHttpClient($this->ok($stream)),
+            GuzzleClientFactory::messageFactory(),
+            'https://api.example.test/',
+            new LiveOptions(),
+            new FrozenClock('2026-01-01T00:00:00+00:00'),
+            $limit,
+        );
+
+        if ($accepted) {
+            $this->open($connection);
+            self::assertSame(self::PUB_A, $connection->read(0.0));
+            self::assertSame(self::PUB_A, $connection->read(0.0));
+
+            return;
+        }
+        try {
+            $this->open($connection);
+            self::fail('expected a TransportException');
+        } catch (TransportException $e) {
+            self::assertStringContainsString('too much data', $e->getMessage());
+            self::assertTrue($stream->wasClosed());
+        }
+    }
+
+    #[Test]
+    public function closingDropsUndeliveredEarlyMessages(): void
+    {
+        $connection = $this->connection(new FakeHttpClient(
+            $this->ok(self::EVENT_A . self::CONNECT . self::EVENT_B),
+            $this->ok(self::CONNECT . self::EVENT_B),
+        ));
+        $this->open($connection);
+        $connection->close();
+
+        try {
+            $connection->read(0.0);
+            self::fail('expected a TransportException');
+        } catch (TransportException) {
+            // closed
+        }
+
+        $this->open($connection);
+        self::assertSame(self::PUB_B, $connection->read($this->timeout()));
     }
 
     #[Test]

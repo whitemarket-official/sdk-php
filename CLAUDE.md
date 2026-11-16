@@ -14,6 +14,9 @@ Read on demand, not every session:
 Sister SDKs (same spec, same public API, idiomatic per language): `../whitemarket_sdk_php` (reference implementation),
 `../whitemarket_sdk_golang`, `../whitemarket_sdk_js`, `../whitemarket_sdk_ts`, `../whitemarket_sdk_python`,
 `../whitemarket_sdk_csharp`, `../whitemarket_sdk_rust`. Read them for parity; never edit them from this repo's session.
+One exception (owner decision 2026-11-15): the files listed in `.claude/shared-docs.conf` are copied byte-identical over
+the same path in every sister repo when the `shared-docs-sync.sh` Stop hook asks; look at the target first (it must
+hold nothing the source lacks, else stop and report), copy only those files, touch nothing else there.
 
 ## Communication
 
@@ -80,7 +83,8 @@ Every request resends the whole session history, so cost grows quadratically wit
 15. **Suppressions need a reason and an issue reference** on the same or previous line (linter disables, type-ignore, coverage-ignore, baseline entries). Caught by the Stop hook `suppress-check.sh`.
 16. **Public API is a contract (SemVer).** Removing or renaming a public symbol, changing a signature, tightening validation, changing defaults -> a separate CHANGELOG entry under "Breaking" with `before -> after`, and a major bump (minor while `0.x`). Deprecate first, remove later.
 17. **Deviation from the plan or the spec is recorded**: line in `docs/DEVIATIONS.md` or the plan's "Deviations" (*what was required -> why it did not work (fact) -> what was done*). A deviation that changes the public API, the retry/idempotency rules, auth or money handling -> STOP and ask.
-18. **Parity with sister SDKs.** A behaviour change that the spec does not cover is first proposed as a change to `docs/SDK_SPEC.md`, then implemented. Never silently diverge.
+18. **Parity with sister SDKs.** PHP is the reference SDK. A behaviour change that the spec does not cover is first proposed as a change to `docs/SDK_SPEC.md`, then implemented. Never silently diverge.
+    - **Every fix and every feature reaches all seven SDKs** (SDK_SPEC preamble). A sister SDK's code is never edited from here. When the readiness chain is green, the final report gives one self-contained prompt per sister SDK (all six others): what changed and why, `file:line` of the implementation and its tests, the tests to write red first, the SDK_SPEC sections, what to check in that SDK's code. Saved outside every SDK repository, in the one parity file of the owner's user-level memory `~/.claude/whitemarket-sdk/PARITY.md` (meta information of the seven-SDK effort, owned by no single SDK; its header says how to add a topic and mark a cell); a sister session takes the open cells of its column from there and marks each one done in that file. An SDK without code for the area still gets its prompt (kept for later).
 
 ## Language rules (PHP)
 

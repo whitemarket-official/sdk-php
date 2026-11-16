@@ -10,12 +10,20 @@ A language may deviate only where its idioms require it, and records the deviati
 PHP is the reference implementation. On a conflict between this spec and the PHP code, the spec wins and the PHP
 code gets fixed.
 
+**Every fix and every feature reaches all seven SDKs.** The session that implements it in one SDK never edits the other
+repositories' code. When its readiness chain is green it gives the owner one self-contained prompt per sister SDK (all
+six others): what changed and why, the `file:line` of its own implementation and tests, the tests to write red first,
+the SDK_SPEC sections involved and what the sister SDK has to check in its own code. Each SDK implements it in its own
+session. A behaviour this spec does not yet cover goes into the spec first (proposed here, adopted by PHP as the
+reference), then into the code. An SDK that has no code yet for the area keeps the item for when it gets there; an item
+is never dropped silently.
+
 ## 0. Defaults decided for the first release (change only with the owner's approval)
 
 | Topic | Decision |
 |---|---|
-| GitHub org | `https://github.com/whitemarket-official` |
-| Repository names (already created, public, in the org) | `whitemarket-official/sdk-php`, `sdk-golang`, `sdk-js`, `sdk-ts`, `sdk-python`, `sdk-csharp`, `sdk-rust` |
+| GitHub owner | `https://github.com/whitemarket-official`: a corporate **personal account, not an organization**. No teams: `CODEOWNERS`, rulesets and environment reviewers name the account `@whitemarket-official`. A PR author cannot approve their own PR, so the `main` ruleset requires a PR and the CI status check but no approval and no code-owner review; the human review of agent configuration and CI paths is the owner's check of the diff before the merge. Rulesets and environment reviewers work because the repositories are public |
+| Repository names (already created, public, owned by that account) | `whitemarket-official/sdk-php`, `sdk-golang`, `sdk-js`, `sdk-ts`, `sdk-python`, `sdk-csharp`, `sdk-rust` |
 | License | MIT (confirm with the owner before the first public release) |
 | Package names (check availability in the registry before publishing) | PHP `whitemarket/sdk` (Packagist), namespace `WhiteMarket\Sdk`; Go module `github.com/whitemarket-official/sdk-golang` (must equal the repo path), package `whitemarket`; npm TS `@whitemarket/sdk`; npm JS `@whitemarket/sdk-js`; Python dist `whitemarket-sdk`, import `whitemarket`; NuGet `WhiteMarket.Sdk`, namespace `WhiteMarket.Sdk`; crate `whitemarket-sdk`, lib `whitemarket` |
 | Versioning | SemVer. `0.x` until the high-level API is reviewed and frozen; then `1.0.0`. One version line per SDK, independent between languages |
@@ -190,6 +198,26 @@ cannot set its timeouts and logs one notice saying so; the caller is responsible
 (section 1.4). `fromEnv()` lets `WHITEMARKET_BASE_URL` replace only the base URL of the other options. The checks use
 the language's argument-validation error.
 
+Endpoint options (`baseUrl`, `graphqlPath`, `exportBaseUrl`, `sseUrl`, `wsUrl`) are printable ASCII (U+0020-U+007E)
+of at most 2048 characters each (the SDK appends to them: base + path, the SSE connect query with the live token,
+export file paths, and HTTP libraries cap a URL's length); any other character (a control character, U+0080 and
+above, a lone surrogate) is refused at construction, and an internationalised host is given in its `xn--` form. Each URL option must also be one the SDK's HTTP library can build a
+request for, checked at construction (a bad port, an IPv4 address out of range, an `xn--` label that is not punycode).
+A port is accepted only if every layer of the SDK (HTTP client, URL parser, WebSocket library, the WS URL derived from
+`baseUrl`) reads it as the same port in 1-65535; port 0 is always refused. Whether an empty (`host:`) or zero-padded
+(`host:000443`) port is accepted follows from that rule per SDK (Python accepts both, PHP refuses both; owner decision
+2026-11-15, Python #44).
+`sseUrl` and `wsUrl` hold no fragment, and a bare trailing `#` counts as one (the SSE connect query appended after it
+would become the fragment and never reach the server). `sseUrl` takes no query of its own: the SDK appends
+`?cf_connect=...`, so a given query breaks the connect. This is documented in the README; an SDK may also refuse a
+query at construction, but is not required to (owner decision 2026-11-15, #42; Python documents it only).
+Reason: URL parsers accept or silently drop such values, the HTTP library refuses them only when it builds a request
+(for SSE one that holds the live token, so its error can print the token), and a live session would retry such a URL
+for ever. The GraphQL and the export transports report a failure to build a request by the library error's class name
+only, never chained, and do not retry it: building fails the same way on every attempt and is not a network failure
+(owner decision 2026-11-15, export added; PHP does it, Python to adopt). [Proposed by the Python SDK 2026-11-15;
+adopted by PHP 2026-11-15.]
+
 ### TokenStore
 
 Interface `get() -> {token, expiresAt}?`, `set(token, expiresAt)`, `clear()`. Implementations: in-memory (default);
@@ -217,6 +245,10 @@ is expired; a missing or non-numeric `exp` gives 24 h. A token whose `exp` is in
 local clock counts as expired: the SDK exchanges the Partner Token again before sending the next request instead of
 waiting for a 401 (owner decision 2026-11-14). A token just received is used for the request that asked for it, but is
 not served from the cache afterwards. Otherwise the token is refreshed 5 min before the end of its lifetime.
+The local clock is normalised to UTC (a clock in another zone or across a DST change does not shift the expiry) and
+rounded UP to whole seconds before it is compared with `exp`; the expiry is that clock plus the lifetime, so it is never
+after `exp` and at most 1 s early (owner decision 2026-11-15, #37). A payload with a `NaN` / `Infinity` literal or
+otherwise unreadable JSON gives 24 h like any unreadable payload, never an uncaught error.
 
 ### 3.2 market (read)
 
@@ -580,6 +612,14 @@ live.connect() / live.close()
 - A malformed message of a known type (missing required field, wrong scalar type) becomes `UnknownEvent` plus an
   `onError` call; the stream continues.
 - Envelope decoding handles `message` as string or object; WS frames split on `\n`.
+- SSE connect: the connect reply is not always the first event (WHITEMARKET_API.md 9, observed 2026-11-15:
+  publications arrive before it, more than 64 at a time). Until the connect reply (within the connect timeout), every
+  other message is kept, bounded by its total text size (64 MiB, the live buffer budget; more ends the attempt with a
+  transport error) and not by a message count, and delivered after `onConnected`, in order, exactly as if it had come
+  after the reply (a malformed one goes to `onError`). Data messages are kept as raw text and decoded when delivered.
+  A disconnect before the reply is handled as a close code; a stream that ends before it is a failed attempt. Messages
+  kept for an attempt that fails, or not yet delivered when the connection is closed, are dropped with it. [Proposed by
+  the Python SDK 2026-11-15; adopted by PHP 2026-11-15.]
 - Personal channel: the server subscribes `#<personId>` (and `broadcast`) on connect; SDKs do not send a subscribe
   for it and recognise personal channels by the leading `#`. A `105 already subscribed` reply to any subscribe counts
   as success.
@@ -602,7 +642,9 @@ live.connect() / live.close()
 - A handler exception propagates out of the call that dispatched it (`poll()`, `run()`, the event iterator, `waitFor()`);
   the connection stays open. It is not routed to `onError`, which receives non-fatal problems only.
 - Token: a fresh token before every connect; when the connect reply `ttl` says under 10 minutes are left, refresh the
-  JWT and reconnect (both transports). Error 109 or close code 3500 (or an SSE 401) trigger one refresh + reconnect; a
+  JWT and reconnect (both transports). The `ttl` is clamped to 0 .. 31536000 s (one year) before use: an integer
+  outside the language's number range is clamped, never a decode error or a failed connect. [Proposed by the Python SDK
+  2026-11-15; adopted by PHP 2026-11-15.] Error 109 or close code 3500 (or an SSE 401) trigger one refresh + reconnect; a
   second one in a row is terminal (authentication error). Close code 3005 (token expired), the `ttl` rule and the
   scheduled refresh share ONE refresh per streak (a streak ends when a connection stayed up 60 s); after it 3005 still
   reconnects with the backoff but without another refresh. So at most two refreshes per streak: one of these plus one
@@ -627,6 +669,9 @@ live.connect() / live.close()
 - `Money { amount: exact decimal, currency }`: Python `Decimal`, C# `decimal`, others a validated decimal string type with
   helpers (`toString`, `equals`, `compare`). No binary floats anywhere in public money APIs. `cheapest_float` / `float` wear values are
   decimal strings too (precision matters for patterns).
+- A server JSON number the target type cannot hold (out of the decimal or float range, such as `1e400`; `NaN` /
+  `Infinity`) is a decode error of that field, never an uncaught exception, an infinite or a NaN value (owner decision
+  2026-11-15, #37).
 - `DateTime` -> native date-time with offset (PHP `DateTimeImmutable`, Go `time.Time`, JS/TS `Date` + raw string, Python aware `datetime`,
   C# `DateTimeOffset`, Rust `time::OffsetDateTime` or `chrono` (pick one, document)).
 - Enums: native enums with an unknown fallback.
@@ -728,6 +773,12 @@ with minimal variables, `deal_buyer_statuses(["non-existent"])`, export meta + f
   secret, response data or operation variables is excluded from them (PHP: `#[\SensitiveParameter]`, enforced by a
   static check because PHP does not inherit the attribute). Shared test cases: `tests/unit/Generated/GeneratedClientTest.php`
   of the PHP SDK (a malformed sibling of a credential field).
+- An error that reaches the caller (raised, or passed to `onError`) shows no credential in its printed form: its message,
+  every exception on its chain (cause / context / previous) and, where a traceback tool prints stack-frame variables,
+  their printed form (`repr` / string). An error of a library raised while a credential is in scope (the SSE request URL
+  holds the live token) is never chained or wrapped: the SDK raises its own error, outside the handler, with the library
+  error's class name only. A credential reachable only by walking object graphs (an open HTTP response's request URL
+  from a frame's `this` / `self`) is out of scope. [Proposed by the Python SDK 2026-11-15; adopted by PHP 2026-11-15.]
 - TLS verification always on; no option to disable it in the high-level API.
 - No logging of request/response bodies by default; debug mode redacts as in 1.3.
 - Decompression limits on export downloads (configurable max decompressed size for non-streaming calls).

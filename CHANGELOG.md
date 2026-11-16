@@ -18,6 +18,13 @@ While the version is `0.x`, a minor release (`0.2.0`) may contain breaking chang
 
 ### Breaking
 
+- Endpoint options (`TransportOptions::$baseUrl` and `$graphqlPath`, `ExportOptions::$baseUrl`, `LiveOptions::$ssePath` and
+  `$wsPath`) are validated more strictly (SDK_SPEC 2). Before -> after: a value with a character outside printable
+  ASCII (an internationalised host must be given in its `xn--` form), longer than 2048 characters, with a port that is
+  not 1-65535, or with a bracketed host that is not an IPv6 literal, with a host (not bracketed) containing a character other than letters, digits, `.`, `-`, `_` and `~`, and a URL that the request factory in use cannot
+  build, now throw `InvalidArgumentException` at construction (the request factory check runs in
+  `WhiteMarketClient::create()`, `ExportClient::create()` and `WhiteMarketClient::live()`); before, the first request or
+  connect failed instead, or went to another port.
 - `Errors\MutationOutcomeUnknownException::__construct(string $operation, \Throwable $cause, string $checkHint)` ->
   `__construct(string $operation, \Throwable $cause)`: the "where to check" hint is derived from the operation name
   (owner decision 2026-11-14, same as the Python SDK). Only code that constructs the exception itself is affected;
@@ -25,6 +32,11 @@ While the version is `0.x`, a minor release (`0.2.0`) may contain breaking chang
 
 ### Changed
 
+- A GraphQL or export request that cannot be built (the PSR-17 factories or the PSR-7 message throw while it is
+  assembled) is a `TransportException` naming the class of the cause only, not retried; before, the raw exception of
+  the PSR implementation reached the caller (its message may quote the URL or a header value).
+- Auth: the token expiry is the exact clock (taken in UTC) plus `exp - now` with the clock rounded up to whole
+  seconds, so a token expires up to 1 s earlier than before and never after `exp`.
 - Auth: an access token whose `exp` is in the past or within the 5 minute refresh margin counts as expired; the
   Partner Token is exchanged again before the next request instead of after a 401. The cached lifetime never runs past
   `exp` by the local clock (it is capped by `exp - iat` as before), and a non-integer `exp` / `iat` is rounded down
@@ -44,6 +56,14 @@ While the version is `0.x`, a minor release (`0.2.0`) may contain breaking chang
   repository root, so a nested `vendor/` directory is scanned.
 - `DealStatus::Queued` can now be passed in the status filters of `deals()->listAsBuyer()` and
   `deals()->listAsSeller()`. Before, the SDK threw `InvalidArgumentException` because the schema did not accept it.
+
+### Fixed
+
+- A live connect reply `ttl` outside 0..31536000 (including integers beyond 64 bits, which failed the decode and made
+  the connect retry for ever or time out) is clamped instead of failing the connect.
+- A GraphQL Float outside the float range (`1e400`) is a `DecodeException` instead of `INF` in the decoded value.
+- Live over SSE: the connect no longer fails when the server sends publications before the connect reply. They are kept
+  (bounded by 64 MiB of message text, not by a count) and delivered after `onConnected`, in order.
 
 ## [0.1.0] - 2026-11-02
 
