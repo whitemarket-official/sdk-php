@@ -9,7 +9,7 @@ namespace WhiteMarket\Sdk;
  */
 final class Version
 {
-    public const SDK = '0.1.0-dev';
+    public const SDK = '0.1.1';
 
     /**
      * `whitemarket-sdk-php/<version> (PHP/<runtime version>)`.
