@@ -8,6 +8,12 @@ While the version is `0.x`, a minor release (`0.2.0`) may contain breaking chang
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-16
+
+Released as a patch version by owner decision although it holds breaking changes (see "Breaking"): a `^0.1` or `~0.1.0`
+constraint picks it up on `composer update`. Check the endpoint options you pass and any code that constructs
+`MutationOutcomeUnknownException` before updating, or pin `0.1.0`.
+
 ### Added
 
 - `DealCancelReason::InstantExchangeFailed` and seven `TransactionReason::InstantExchange*` cases (transfer, refund
@@ -59,6 +65,7 @@ While the version is `0.x`, a minor release (`0.2.0`) may contain breaking chang
 
 ### Fixed
 
+- The `User-Agent` header carries the released version (`whitemarket-sdk-php/0.1.1`); 0.1.0 sent `0.1.0-dev`.
 - A live connect reply `ttl` outside 0..31536000 (including integers beyond 64 bits, which failed the decode and made
   the connect retry for ever or time out) is clamped instead of failing the connect.
 - A GraphQL Float outside the float range (`1e400`) is a `DecodeException` instead of `INF` in the decoded value.
@@ -166,5 +173,6 @@ First public release of the PHP SDK for the WhiteMarket partner API.
 - **Missing deal fields.** The SDK does not request a deal product's `params.updatedAt` and `params.order`, because the
   server currently fails when asked for them.
 
-[Unreleased]: https://github.com/whitemarket-official/sdk-php/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/whitemarket-official/sdk-php/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/whitemarket-official/sdk-php/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/whitemarket-official/sdk-php/releases/tag/v0.1.0
