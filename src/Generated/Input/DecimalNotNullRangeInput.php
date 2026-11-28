@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Money range
+ * Span of decimal values, both ends required
  */
 final class DecimalNotNullRangeInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

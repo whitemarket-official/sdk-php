@@ -31,6 +31,10 @@ final class WalletDeposits
             amount {
               ...MoneyFields
             }
+            paymentAmount {
+              currency
+              value
+            }
             person {
               ...PersonPublicFields
             }

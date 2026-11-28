@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Input with steam link
+ * Steam trade url the user is reachable at
  */
 final class SteamLinkInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

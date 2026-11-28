@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Filters and sorts for orders list
+ * Filters and sorting for standing buy orders. Omitted fields impose no restriction
  */
 final class MarketOrderSearchInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

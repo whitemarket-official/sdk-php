@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Input with proxy
+ * Proxy the Steam requests of this user go through
  */
 final class ProxyInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

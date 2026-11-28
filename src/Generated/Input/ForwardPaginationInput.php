@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Used for forward pagination
+ * Walks a list forwards, page by page
  */
 final class ForwardPaginationInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

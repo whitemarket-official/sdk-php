@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Person store settings
+ * Storefront settings a seller can change
  */
 final class PersonStoreInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

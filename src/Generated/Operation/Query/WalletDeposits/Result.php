@@ -23,6 +23,7 @@ final class Result
         public readonly ?string $providerPaymentPage,
         public readonly \WhiteMarket\Sdk\Generated\Enum\WalletDepositStatus|\WhiteMarket\Sdk\Models\UnknownEnumValue $status,
         public readonly \WhiteMarket\Sdk\Generated\Fragment\MoneyFields $amount,
+        public readonly ?\WhiteMarket\Sdk\Generated\Operation\Query\WalletDeposits\PaymentAmount $paymentAmount,
         public readonly \WhiteMarket\Sdk\Generated\Fragment\PersonPublicFields $person,
     ) {}
 
@@ -42,6 +43,7 @@ final class Result
             providerPaymentPage: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'providerPaymentPage', $path, \WhiteMarket\Sdk\GraphQL\Decode::nullableOf(\WhiteMarket\Sdk\GraphQL\Decode::string(...))),
             status: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'status', $path, \WhiteMarket\Sdk\GraphQL\Decode::enumOf(\WhiteMarket\Sdk\Generated\Enum\WalletDepositStatus::class)),
             amount: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'amount', $path, \WhiteMarket\Sdk\Generated\Fragment\MoneyFields::fromValue(...)),
+            paymentAmount: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'paymentAmount', $path, \WhiteMarket\Sdk\GraphQL\Decode::nullableOf(\WhiteMarket\Sdk\Generated\Operation\Query\WalletDeposits\PaymentAmount::fromValue(...))),
             person: \WhiteMarket\Sdk\GraphQL\Decode::field($data, 'person', $path, \WhiteMarket\Sdk\Generated\Fragment\PersonPublicFields::fromValue(...)),
         );
     }

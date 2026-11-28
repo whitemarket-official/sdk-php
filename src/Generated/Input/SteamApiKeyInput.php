@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Input with person's steam api key
+ * Steam Web API key a user stores on their account
  */
 final class SteamApiKeyInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Money
+ * Amount together with the currency it is given in
  */
 final class MoneyInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

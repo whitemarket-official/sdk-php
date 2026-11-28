@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Input with person's email address
+ * Email address a user sets on their account
  */
 final class PersonEmailInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

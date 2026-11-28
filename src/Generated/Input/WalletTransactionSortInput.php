@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Sort
+ * Ordering rule for the wallet transaction list
  */
 final class WalletTransactionSortInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

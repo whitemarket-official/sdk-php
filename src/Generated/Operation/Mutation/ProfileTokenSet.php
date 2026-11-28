@@ -16,7 +16,7 @@ final class ProfileTokenSet
     public const TYPE = \WhiteMarket\Sdk\GraphQL\OperationType::Mutation;
 
     public const DOCUMENT = <<<'GRAPHQL'
-        mutation ProfileTokenSet($ownProxyRequired: Boolean = false, $payload: String!, $ttl: Int = null) {
+        mutation ProfileTokenSet($ownProxyRequired: Boolean = false, $payload: String!, $ttl: Int) {
           profile_token_set(
             ownProxyRequired: $ownProxyRequired
             payload: $payload

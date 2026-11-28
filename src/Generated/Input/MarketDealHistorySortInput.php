@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Sort
+ * Ordering rule for the deal history list
  */
 final class MarketDealHistorySortInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

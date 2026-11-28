@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Input with person's email address
+ * Referral details a new user signs up with
  */
 final class ReferrerInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {
