@@ -6,6 +6,9 @@ declare(strict_types=1);
 
 namespace WhiteMarket\Sdk\Generated\Input;
 
+/**
+ * Points at one item by its Steam asset ID within a game
+ */
 final class MarketProductAppIdAssetIdInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {
     public function __construct(

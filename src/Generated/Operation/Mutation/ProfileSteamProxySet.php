@@ -16,7 +16,7 @@ final class ProfileSteamProxySet
     public const TYPE = \WhiteMarket\Sdk\GraphQL\OperationType::Mutation;
 
     public const DOCUMENT = <<<'GRAPHQL'
-        mutation ProfileSteamProxySet($proxy: ProxyInput!, $ttl: Int = null) {
+        mutation ProfileSteamProxySet($proxy: ProxyInput!, $ttl: Int) {
           profile_steam_proxy_set(proxy: $proxy, ttl: $ttl)
         }
         GRAPHQL;

@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Filters and sorts for wallet transactions list
+ * Filters and sorting for your balance history. Omitted fields impose no restriction
  */
 final class WalletTransactionSearchInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

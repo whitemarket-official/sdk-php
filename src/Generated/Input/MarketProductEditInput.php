@@ -6,6 +6,9 @@ declare(strict_types=1);
 
 namespace WhiteMarket\Sdk\Generated\Input;
 
+/**
+ * New price for one listing. Identify it either by productId or by assetId
+ */
 final class MarketProductEditInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {
     public function __construct(

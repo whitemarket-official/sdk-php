@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Sort
+ * Ordering rule for the buy order list
  */
 final class MarketOrderSortInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

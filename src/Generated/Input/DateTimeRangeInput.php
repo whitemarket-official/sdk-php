@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * DateTime range
+ * Time span to filter by, either end may be left out
  */
 final class DateTimeRangeInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

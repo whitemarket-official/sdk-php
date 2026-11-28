@@ -8,14 +8,44 @@ namespace WhiteMarket\Sdk\Generated\Enum;
 
 enum MarketDealExternalCancelReason: string
 {
+    /**
+     * Buyer has private inventory in Steam
+     */
     case BUYER_INVENTORY_PRIVATE = 'BUYER_INVENTORY_PRIVATE';
+    /**
+     * Buyer is not tradeable to receive skin
+     */
     case BUYER_NOT_TRADEABLE = 'BUYER_NOT_TRADEABLE';
+    /**
+     * Buyer has enabled family view in Steam
+     */
     case BUYER_STEAM_FAMILY_VIEW = 'BUYER_STEAM_FAMILY_VIEW';
+    /**
+     * Seller is not tradeable to send skin
+     */
     case SELLER_NOT_TRADEABLE = 'SELLER_NOT_TRADEABLE';
+    /**
+     * No skin available to sent
+     */
     case SKIN_UNAVAILABLE = 'SKIN_UNAVAILABLE';
+    /**
+     * Steam connection issues or glitches
+     */
     case STEAM_ISSUES = 'STEAM_ISSUES';
+    /**
+     * Steam error 15
+     */
     case STEAM_ISSUES_15 = 'STEAM_ISSUES_15';
+    /**
+     * Seller cannot send skin due steam too many sent limit
+     */
     case STEAM_SENDING_LIMIT_EXCEED = 'STEAM_SENDING_LIMIT_EXCEED';
+    /**
+     * When receiver banned by VAC
+     */
     case STEAM_VAC_BAN = 'STEAM_VAC_BAN';
+    /**
+     * Use this when happens something unpredictable. Please fill comment
+     */
     case UNKNOWN = 'UNKNOWN';
 }

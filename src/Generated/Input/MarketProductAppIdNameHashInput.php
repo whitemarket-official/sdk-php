@@ -6,6 +6,9 @@ declare(strict_types=1);
 
 namespace WhiteMarket\Sdk\Generated\Input;
 
+/**
+ * Points at any item of a given kind, so the cheapest matching listing can be bought
+ */
 final class MarketProductAppIdNameHashInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {
     public function __construct(

@@ -7,7 +7,7 @@ declare(strict_types=1);
 namespace WhiteMarket\Sdk\Generated\Input;
 
 /**
- * Filters and sorts for market deals history
+ * Filters and sorting for finished deals. Omitted fields impose no restriction
  */
 final class MarkerDealHistorySearchInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {

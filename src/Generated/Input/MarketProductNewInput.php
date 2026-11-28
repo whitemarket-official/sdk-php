@@ -6,6 +6,9 @@ declare(strict_types=1);
 
 namespace WhiteMarket\Sdk\Generated\Input;
 
+/**
+ * One item to put up for sale. Identify it either by inventoryId or by assetId
+ */
 final class MarketProductNewInput implements \WhiteMarket\Sdk\GraphQL\InputObject
 {
     public function __construct(
